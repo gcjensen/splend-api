@@ -24,7 +24,7 @@ func (c *UserController) GetDetails(
 		return
 	}
 
-	user, err := NewUserFromDB(id, c.DB)
+	user, err := NewFromDB(id, c.DB)
 	if err != nil {
 		respondWithError(err, writer)
 		return

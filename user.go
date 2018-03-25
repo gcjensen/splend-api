@@ -25,7 +25,7 @@ func New(email string, DB *sql.DB) (*User, error) {
 	return self, err
 }
 
-func NewUserFromDB(id int, DB *sql.DB) (*User, error) {
+func NewFromDB(id int, DB *sql.DB) (*User, error) {
 	statement := fmt.Sprintf(`
         SELECT email
         FROM users
@@ -40,6 +40,8 @@ func NewUserFromDB(id int, DB *sql.DB) (*User, error) {
 
 	return New(email, DB)
 }
+
+/************************** Private Implementation ****************************/
 
 func (self *User) getInsertDetails(DB *sql.DB) error {
 	err := self.getUser(DB)
@@ -71,7 +73,7 @@ func (self *User) getUser(DB *sql.DB) error {
 
 	err = self.getPartnerName(coupleID, DB)
 	if err != nil {
-		return errors.New("Unknown user")
+		return err
 	}
 
 	return err
