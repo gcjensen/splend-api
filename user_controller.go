@@ -14,8 +14,8 @@ type UserController struct {
 
 func (c *UserController) GetDetails(
 	writer http.ResponseWriter,
-	req *http.Request) {
-
+	req *http.Request,
+) {
 	// Pull out into some sort of reuable param verification logic
 	params := mux.Vars(req)
 	id, err := strconv.Atoi(params["id"])

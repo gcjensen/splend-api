@@ -1,0 +1,6 @@
+database: 'your-db-name'
+username: 'root'
+password: 'your-db-password'
+
+host: '0.0.0.0'
+port: 3000
