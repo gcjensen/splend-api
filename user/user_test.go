@@ -1,48 +1,54 @@
-package main
+package user
 
 import (
 	"database/sql"
 	"fmt"
+	"github.com/gcjensen/settle-api/config"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestNew(t *testing.T) {
-	DB := ResetDB()
+	dbh := config.TestDBH()
 
 	email := "jesse@pinkman.com"
-	_, err := New(email, DB)
+	_, err := New(email, dbh)
 
 	assert.Equal(t, err.Error(), "User creation not yet implemented")
+	DeleteAllUsers(dbh)
 }
 
 func TestNewFromDB(t *testing.T) {
-	DB := ResetDB()
+	dbh := config.TestDBH()
 
-	coupleID := InsertTestCouple(DB)
+	coupleID := InsertTestCouple(dbh)
+
 	// Inserted so the partner of Hank can be tested
 	InsertTestUser(&User{
 		FirstName: "Marie",
 		LastName:  "Schrader",
 		Email:     "marie@schrader.com",
-	}, coupleID, DB)
+	}, coupleID, dbh)
 
 	newUser := &User{
 		FirstName: "Hank",
 		LastName:  "Schrader",
 		Email:     "hank@schrader.com",
 	}
-	id := InsertTestUser(newUser, coupleID, DB)
+	id := InsertTestUser(newUser, coupleID, dbh)
 
-	user, err := NewFromDB(id, DB)
+	user, err := NewFromDB(id, dbh)
 
 	assert.Nil(t, err)
 	newUser.ID = id
 	newUser.Partner = "Marie"
 	assert.Equal(t, user, newUser)
 
-	user, err = NewFromDB(10000, DB)
+	user, err = NewFromDB(10000, dbh)
 	assert.NotNil(t, err)
+	assert.Equal(t, err.Error(), "Unknown user")
+
+	DeleteAllUsers(dbh)
 }
 
 /***************** Methods for creating data to test against ******************/
@@ -71,4 +77,8 @@ func InsertTestCouple(DB *sql.DB) int {
 	var id int
 	DB.QueryRow("SELECT LAST_INSERT_ID()").Scan(&id)
 	return id
+}
+
+func DeleteAllUsers(DB *sql.DB) {
+	DB.Exec("DELETE FROM users")
 }

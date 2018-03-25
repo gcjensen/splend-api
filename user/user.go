@@ -1,4 +1,4 @@
-package main
+package user
 
 import (
 	"database/sql"
@@ -14,37 +14,37 @@ type User struct {
 	Partner   string `json:"partner"`
 }
 
-func New(email string, DB *sql.DB) (*User, error) {
+func New(email string, dbh *sql.DB) (*User, error) {
 
 	// TODO: Parse email to check validity
 
 	self := &User{Email: email}
 
-	err := self.getInsertDetails(DB)
+	err := self.getInsertDetails(dbh)
 
 	return self, err
 }
 
-func NewFromDB(id int, DB *sql.DB) (*User, error) {
+func NewFromDB(id int, dbh *sql.DB) (*User, error) {
 	statement := fmt.Sprintf(`
         SELECT email
         FROM users
         WHERE id=%d`, id)
 
 	var email string
-	err := DB.QueryRow(statement).Scan(&email)
+	err := dbh.QueryRow(statement).Scan(&email)
 
 	if err != nil {
 		return nil, errors.New("Unknown user")
 	}
 
-	return New(email, DB)
+	return New(email, dbh)
 }
 
 /************************** Private Implementation ****************************/
 
-func (self *User) getInsertDetails(DB *sql.DB) error {
-	err := self.getUser(DB)
+func (self *User) getInsertDetails(dbh *sql.DB) error {
+	err := self.getUser(dbh)
 	if err != nil {
 		// TODO implement user creation
 		return errors.New("User creation not yet implemented")
@@ -53,14 +53,14 @@ func (self *User) getInsertDetails(DB *sql.DB) error {
 	return nil
 }
 
-func (self *User) getUser(DB *sql.DB) error {
+func (self *User) getUser(dbh *sql.DB) error {
 	statement := fmt.Sprintf(`
         SELECT id, first_name, last_name, couple_id
         FROM users
         WHERE email="%s"`, self.Email)
 
 	var coupleID int
-	err := DB.QueryRow(statement).Scan(
+	err := dbh.QueryRow(statement).Scan(
 		&self.ID,
 		&self.FirstName,
 		&self.LastName,
@@ -71,7 +71,7 @@ func (self *User) getUser(DB *sql.DB) error {
 		return errors.New("Unknown user")
 	}
 
-	err = self.getPartnerName(coupleID, DB)
+	err = self.getPartnerName(coupleID, dbh)
 	if err != nil {
 		return err
 	}
@@ -79,14 +79,14 @@ func (self *User) getUser(DB *sql.DB) error {
 	return err
 }
 
-func (self *User) getPartnerName(coupleID int, DB *sql.DB) error {
+func (self *User) getPartnerName(coupleID int, dbh *sql.DB) error {
 	statement := fmt.Sprintf(`
 		SELECT first_name
 		FROM users
 		WHERE couple_id = %d AND id != %d`,
 		coupleID, self.ID)
 
-	err := DB.QueryRow(statement).Scan(&self.Partner)
+	err := dbh.QueryRow(statement).Scan(&self.Partner)
 	if err != sql.ErrNoRows {
 		return err
 	}

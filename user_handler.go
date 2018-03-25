@@ -3,16 +3,18 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"github.com/gcjensen/settle-api/user"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
 )
 
-type UserController struct {
-	DB *sql.DB
+type UserHandler struct {
+	dbh *sql.DB
 }
 
-func (c *UserController) GetDetails(
+func (handler *UserHandler) GetDetails(
 	writer http.ResponseWriter,
 	req *http.Request,
 ) {
@@ -20,12 +22,14 @@ func (c *UserController) GetDetails(
 	params := mux.Vars(req)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
+		fmt.Println(err)
 		respondWithError(err, writer)
 		return
 	}
 
-	user, err := NewFromDB(id, c.DB)
+	user, err := user.NewFromDB(id, handler.dbh)
 	if err != nil {
+		fmt.Println(err)
 		respondWithError(err, writer)
 		return
 	}

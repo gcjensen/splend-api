@@ -12,13 +12,13 @@ import (
 )
 
 type Server struct {
-	Router         *mux.Router
-	DB             *sql.DB
-	userController *UserController
+	Router      *mux.Router
+	dbh         *sql.DB
+	userHandler *UserHandler
 }
 
 type authMiddleware struct {
-	DB *sql.DB
+	dbh *sql.DB
 }
 
 func (amw *authMiddleware) Middleware(next http.Handler) http.Handler {
@@ -35,42 +35,32 @@ func (amw *authMiddleware) Middleware(next http.Handler) http.Handler {
 		)
 
 		var userID int
-		err = amw.DB.QueryRow(statement).Scan(&userID)
+		err = amw.dbh.QueryRow(statement).Scan(&userID)
 
 		if err == nil && userID == id {
 			log.Printf("Authenticated user with ID %d\n", id)
 			next.ServeHTTP(w, r)
 		} else {
+			if err != nil {
+				log.Println(err.Error())
+			}
 			http.Error(w, "Forbidden", http.StatusForbidden)
 		}
 	})
 }
 
-func (server *Server) Initialise(user, password, dbname string) {
-	connectionString := fmt.Sprintf(
-		"%s:%s@/%s?%s",
-		user,
-		password,
-		dbname,
-		"parseTime=true",
-	)
-
-	var err error
-	server.DB, err = sql.Open("mysql", connectionString)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+func (server *Server) Initialise(dbh *sql.DB) {
 	server.Router = mux.NewRouter()
-	server.userController = &UserController{server.DB}
+	server.dbh = dbh
+	server.userHandler = &UserHandler{server.dbh}
 
-	amw := authMiddleware{server.DB}
+	amw := authMiddleware{server.dbh}
 	server.Router.Use(amw.Middleware)
 
 	// Route for retrieving all details on a user
 	server.Router.HandleFunc(
 		"/user/{id:[0-9]+}/details",
-		server.userController.GetDetails,
+		server.userHandler.GetDetails,
 	).Methods("GET")
 }
 

@@ -2,43 +2,18 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	"github.com/gcjensen/settle-api/config"
 	"log"
 )
 
 func main() {
-	var c config
-	c.getConfig()
+	dbh := config.SettleDBH()
+	config := config.Load()
 
 	server := Server{}
-	server.Initialise(c.Username, c.Password, c.Database)
+	server.Initialise(dbh)
 
-	log.Printf("API available at '%s:%d'", c.Host, c.Port)
+	log.Printf("API available at '%s:%d'", config.Host, config.Port)
 
-	server.Run(fmt.Sprintf("%s:%d", c.Host, c.Port))
-}
-
-type config struct {
-	Database string `yaml:"database"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-}
-
-func (c *config) getConfig() *config {
-
-	// Update to point towards your config file
-	configFile, err := ioutil.ReadFile("/etc/settle-api.yaml")
-
-	if err != nil {
-		log.Printf("configFile.Get err #%v", err)
-	}
-	err = yaml.Unmarshal(configFile, c)
-	if err != nil {
-		log.Fatalf("Unmarshal: %v", err)
-	}
-
-	return c
+	server.Run(fmt.Sprintf("%s:%d", config.Host, config.Port))
 }
