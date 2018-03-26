@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/gcjensen/settle-api/outgoing"
 )
 
 type User struct {
@@ -11,7 +12,10 @@ type User struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
 	Email     string `json:"email"`
-	Partner   string `json:"partner"`
+	Partner   struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	} `json:"partner"`
 }
 
 func New(email string, dbh *sql.DB) (*User, error) {
@@ -39,6 +43,37 @@ func NewFromDB(id int, dbh *sql.DB) (*User, error) {
 	}
 
 	return New(email, dbh)
+}
+
+func (self *User) GetOutgoings(dbh *sql.DB) ([]outgoing.Outgoing, error) {
+	statement := fmt.Sprintf(`
+		SELECT o.id, description, amount, spender_id, c.name, settled, timestamp
+		FROM outgoings o
+		JOIN categories c ON o.category_id=c.id
+		WHERE spender_id IN (%d, %d)
+		ORDER BY o.timestamp DESC`,
+		self.ID, self.Partner.ID)
+
+	rows, err := dbh.Query(statement)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var outgoings []outgoing.Outgoing
+
+	for rows.Next() {
+		var o outgoing.Outgoing
+		if err := rows.Scan(&o.ID, &o.Description, &o.Amount, &o.Spender,
+			&o.Category, &o.Settled, &o.Timestamp); err != nil {
+			return nil, err
+		}
+		outgoings = append(outgoings, o)
+	}
+
+	return outgoings, err
 }
 
 /************************** Private Implementation ****************************/
@@ -71,7 +106,7 @@ func (self *User) getUser(dbh *sql.DB) error {
 		return errors.New("Unknown user")
 	}
 
-	err = self.getPartnerName(coupleID, dbh)
+	err = self.getPartner(coupleID, dbh)
 	if err != nil {
 		return err
 	}
@@ -79,14 +114,14 @@ func (self *User) getUser(dbh *sql.DB) error {
 	return err
 }
 
-func (self *User) getPartnerName(coupleID int, dbh *sql.DB) error {
+func (self *User) getPartner(coupleID int, dbh *sql.DB) error {
 	statement := fmt.Sprintf(`
-		SELECT first_name
+		SELECT id, first_name
 		FROM users
 		WHERE couple_id = %d AND id != %d`,
 		coupleID, self.ID)
 
-	err := dbh.QueryRow(statement).Scan(&self.Partner)
+	err := dbh.QueryRow(statement).Scan(&self.Partner.ID, &self.Partner.Name)
 	if err != sql.ErrNoRows {
 		return err
 	}

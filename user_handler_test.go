@@ -54,7 +54,7 @@ func TestGetDetailsEndPoint(t *testing.T) {
 		`"firstName":"Hank",`+
 		`"lastName":"Schrader",`+
 		`"email":"hank@schrader.com",`+
-		`"partner":"Marie"`+
+		`"partner":{"id":1,"name":"Marie"}`+
 		`}`, id)
 
 	if rr.Body.String() != expected {
@@ -95,4 +95,7 @@ func InsertTestCouple(dbh *sql.DB) int {
 
 func DeleteAllUsers(dbh *sql.DB) {
 	dbh.Exec("DELETE FROM users")
+	dbh.Exec("ALTER TABLE users AUTO_INCREMENT = 1")
+	dbh.Exec("DELETE FROM couples")
+	dbh.Exec("ALTER TABLE couples AUTO_INCREMENT = 1")
 }
