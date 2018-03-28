@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/gcjensen/settle-api/config"
 	"github.com/gcjensen/settle-api/user"
@@ -18,21 +17,34 @@ func TestGetDetailsEndPoint(t *testing.T) {
 	server := Server{}
 	server.Initialise(dbh)
 
-	coupleID := InsertTestCouple(dbh)
-	// Inserted so the partner of Hank can be tested
+	coupleID := config.InsertTestCouple(dbh)
 
-	InsertTestUser(&user.User{
+	// Inserted so the partner of Hank can be tested
+	partner := &user.User{
 		FirstName: "Marie",
 		LastName:  "Schrader",
 		Email:     "marie@schrader.com",
-	}, coupleID, dbh)
+	}
+	config.InsertTestUser(
+		partner.FirstName,
+		partner.LastName,
+		partner.Email,
+		coupleID,
+		dbh,
+	)
 
 	newUser := &user.User{
 		FirstName: "Hank",
 		LastName:  "Schrader",
 		Email:     "hank@schrader.com",
 	}
-	id := InsertTestUser(newUser, coupleID, dbh)
+	id := config.InsertTestUser(
+		newUser.FirstName,
+		newUser.LastName,
+		newUser.Email,
+		coupleID,
+		dbh,
+	)
 
 	req, _ := http.NewRequest("GET", "/user/{id}/details", nil)
 	req = mux.SetURLVars(req, map[string]string{"id": strconv.Itoa(id)})
@@ -62,40 +74,5 @@ func TestGetDetailsEndPoint(t *testing.T) {
 			rr.Body.String(), expected)
 	}
 
-	DeleteAllUsers(dbh)
-}
-
-/***************** Methods for creating data to test against ******************/
-
-func InsertTestUser(user *user.User, coupleID int, dbh *sql.DB) int {
-	statement := fmt.Sprintf(`
-        INSERT INTO users
-        (first_name, last_name, email, couple_id)
-        VALUES ("%s", "%s", "%s", %d)`,
-		user.FirstName, user.LastName, user.Email, coupleID)
-
-	dbh.Exec(statement)
-
-	var id int
-	dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&id)
-	return id
-}
-
-func InsertTestCouple(dbh *sql.DB) int {
-	statement := fmt.Sprintf(
-		`INSERT INTO couples (joining_date) VALUES ("2018-01-01")`,
-	)
-
-	dbh.Exec(statement)
-
-	var id int
-	dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&id)
-	return id
-}
-
-func DeleteAllUsers(dbh *sql.DB) {
-	dbh.Exec("DELETE FROM users")
-	dbh.Exec("ALTER TABLE users AUTO_INCREMENT = 1")
-	dbh.Exec("DELETE FROM couples")
-	dbh.Exec("ALTER TABLE couples AUTO_INCREMENT = 1")
+	config.DeleteAllData(dbh)
 }
