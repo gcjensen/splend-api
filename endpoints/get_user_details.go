@@ -1,40 +1,39 @@
-package main
+package endpoints
 
 import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/gcjensen/settle-api/user"
-	"github.com/gorilla/mux"
+	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
 )
 
-type UserHandler struct {
-	dbh *sql.DB
-}
+func GetUserDetails(dbh *sql.DB) httprouter.Handle {
+	return httprouter.Handle(func(
+		writer http.ResponseWriter,
+		req *http.Request,
+		params httprouter.Params,
+	) {
 
-func (handler *UserHandler) GetDetails(
-	writer http.ResponseWriter,
-	req *http.Request,
-) {
-	// Pull out into some sort of reuable param verification logic
-	params := mux.Vars(req)
-	id, err := strconv.Atoi(params["id"])
-	if err != nil {
-		fmt.Println(err)
-		respondWithError(err, writer)
-		return
-	}
+		// Pull out into some sort of reuable param verification logic
+		id, err := strconv.Atoi(params.ByName("id"))
+		if err != nil {
+			fmt.Println(err)
+			respondWithError(err, writer)
+			return
+		}
 
-	user, err := user.NewFromDB(id, handler.dbh)
-	if err != nil {
-		fmt.Println(err)
-		respondWithError(err, writer)
-		return
-	}
+		user, err := user.NewFromDB(id, dbh)
+		if err != nil {
+			fmt.Println(err)
+			respondWithError(err, writer)
+			return
+		}
 
-	respondWithJSON(writer, http.StatusOK, user)
+		respondWithJSON(writer, http.StatusOK, user)
+	})
 }
 
 func respondWithError(err error, writer http.ResponseWriter) {

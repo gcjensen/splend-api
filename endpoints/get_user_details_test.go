@@ -1,21 +1,18 @@
-package main
+package endpoints
 
 import (
 	"fmt"
 	"github.com/gcjensen/settle-api/config"
 	"github.com/gcjensen/settle-api/user"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/gorilla/mux"
+	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 )
 
 func TestGetDetailsEndPoint(t *testing.T) {
 	dbh := config.TestDBH()
-	server := Server{}
-	server.Initialise(dbh)
 
 	coupleID := config.InsertTestCouple(dbh)
 
@@ -46,14 +43,13 @@ func TestGetDetailsEndPoint(t *testing.T) {
 		dbh,
 	)
 
-	req, _ := http.NewRequest("GET", "/user/{id}/details", nil)
-	req = mux.SetURLVars(req, map[string]string{"id": strconv.Itoa(id)})
+	router := httprouter.New()
+	router.GET("/user/:id/details", GetUserDetails(dbh))
 
+	req, _ := http.NewRequest("GET", "/user/2/details", nil)
 	rr := httptest.NewRecorder()
-	userHandler := &UserHandler{dbh}
-	handler := http.HandlerFunc(userHandler.GetDetails)
 
-	handler.ServeHTTP(rr, req)
+	router.ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusOK {
