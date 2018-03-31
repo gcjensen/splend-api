@@ -48,8 +48,8 @@ func (server *Server) Initialise(dbh *sql.DB) {
 	server.Router = httprouter.New()
 	server.dbh = dbh
 
-	// Route for retrieving all details on a user
 	server.Router.GET("/user/:id/details", Auth(endpoints.GetUserDetails(dbh), dbh))
+	server.Router.GET("/user/:id/outgoings", Auth(endpoints.GetUserOutgoings(dbh), dbh))
 }
 
 func (server *Server) Run(addr string) {
