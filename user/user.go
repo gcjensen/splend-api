@@ -47,7 +47,7 @@ func NewFromDB(id int, dbh *sql.DB) (*User, error) {
 
 func (self *User) GetOutgoings(dbh *sql.DB) ([]outgoing.Outgoing, error) {
 	statement := fmt.Sprintf(`
-		SELECT o.id, description, amount, spender_id, c.name, settled, timestamp
+		SELECT o.id, description, amount, owed, spender_id, c.name, settled, timestamp
 		FROM outgoings o
 		JOIN categories c ON o.category_id=c.id
 		WHERE spender_id IN (%d, %d)
@@ -66,8 +66,8 @@ func (self *User) GetOutgoings(dbh *sql.DB) ([]outgoing.Outgoing, error) {
 
 	for rows.Next() {
 		var o outgoing.Outgoing
-		if err := rows.Scan(&o.ID, &o.Description, &o.Amount, &o.Spender,
-			&o.Category, &o.Settled, &o.Timestamp); err != nil {
+		if err := rows.Scan(&o.ID, &o.Description, &o.Amount, &o.Owed,
+			&o.Spender, &o.Category, &o.Settled, &o.Timestamp); err != nil {
 			return nil, err
 		}
 		outgoings = append(outgoings, o)

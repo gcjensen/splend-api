@@ -54,6 +54,7 @@ CREATE TABLE `outgoings` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `description` varchar(255) DEFAULT NULL,
   `amount` float DEFAULT NULL,
+  `owed` float DEFAULT NULL,
   `spender_id` int(11) DEFAULT NULL,
   `category_id` int(11) DEFAULT NULL,
   `settled` datetime DEFAULT NULL,

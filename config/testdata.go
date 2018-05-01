@@ -41,6 +41,7 @@ func InsertTestCouple(dbh *sql.DB) int {
 func InsertTestOutgoing(
 	description string,
 	amount float64,
+	owed float64,
 	spender int,
 	timestamp time.Time,
 	dbh *sql.DB,
@@ -50,9 +51,9 @@ func InsertTestOutgoing(
 
 	statement = fmt.Sprintf(`
 		INSERT INTO outgoings
-		(description, amount, spender_id, category_id, settled, timestamp)
-		VALUES ("%s", %f, %d, %d, NULL, "%s")`,
-		description, amount, spender, 1, timestamp)
+		(description, amount, owed, spender_id, category_id, settled, timestamp)
+		VALUES ("%s", %f, %f, %d, %d, NULL, "%s")`,
+		description, amount, owed, spender, 1, timestamp)
 
 	dbh.Exec(statement)
 
