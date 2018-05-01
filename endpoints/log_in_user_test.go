@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestGetDetailsEndPoint(t *testing.T) {
+func TestLogInUser(t *testing.T) {
 	dbh := config.TestDBH()
 
 	coupleID := config.InsertTestCouple(dbh)
@@ -44,9 +44,9 @@ func TestGetDetailsEndPoint(t *testing.T) {
 	)
 
 	router := httprouter.New()
-	router.GET("/user/:id/details", GetUserDetails(dbh))
+	router.POST("/user/:id", LogInUser(dbh))
 
-	req, _ := http.NewRequest("GET", "/user/2/details", nil)
+	req, _ := http.NewRequest("POST", "/user/2", nil)
 	rr := httptest.NewRecorder()
 
 	router.ServeHTTP(rr, req)

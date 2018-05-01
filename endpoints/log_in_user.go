@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func GetUserDetails(dbh *sql.DB) httprouter.Handle {
+func LogInUser(dbh *sql.DB) httprouter.Handle {
 	return httprouter.Handle(func(
 		writer http.ResponseWriter,
 		req *http.Request,
