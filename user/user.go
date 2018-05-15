@@ -8,6 +8,7 @@ import (
 )
 
 type User struct {
+	DBH       *sql.DB
 	ID        int    `json:"id"`
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
@@ -23,6 +24,7 @@ func New(email string, dbh *sql.DB) (*User, error) {
 	// TODO: Parse email to check validity
 
 	self := &User{Email: email}
+	self.DBH = dbh
 
 	err := self.getInsertDetails(dbh)
 
@@ -45,7 +47,7 @@ func NewFromDB(id int, dbh *sql.DB) (*User, error) {
 	return New(email, dbh)
 }
 
-func (self *User) GetOutgoings(dbh *sql.DB) ([]outgoing.Outgoing, error) {
+func (self *User) GetOutgoings() ([]outgoing.Outgoing, error) {
 	statement := fmt.Sprintf(`
 		SELECT o.id, description, amount, owed, spender_id, c.name, settled, timestamp
 		FROM outgoings o
@@ -54,7 +56,7 @@ func (self *User) GetOutgoings(dbh *sql.DB) ([]outgoing.Outgoing, error) {
 		ORDER BY o.timestamp DESC`,
 		self.ID, self.Partner.ID)
 
-	rows, err := dbh.Query(statement)
+	rows, err := self.DBH.Query(statement)
 
 	if err != nil {
 		return nil, err

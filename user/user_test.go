@@ -56,6 +56,7 @@ func TestNewFromDB(t *testing.T) {
 	newUser.ID = id
 	newUser.Partner.Name = "Marie"
 	newUser.Partner.ID = partnerID
+	newUser.DBH = dbh
 	assert.Equal(t, user, newUser)
 
 	user, err = NewFromDB(10000, dbh)
@@ -99,7 +100,7 @@ func TestGetOutgoings(t *testing.T) {
 	newOutgoing.ID = outgoingID
 
 	user, err := NewFromDB(id, dbh)
-	outgoings, err := user.GetOutgoings(dbh)
+	outgoings, err := user.GetOutgoings()
 
 	assert.Equal(t, []outgoing.Outgoing{newOutgoing}, outgoings)
 	assert.Nil(t, err)

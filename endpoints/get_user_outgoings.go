@@ -28,7 +28,7 @@ func GetUserOutgoings(dbh *sql.DB) httprouter.Handle {
 		user, err := user.NewFromDB(id, dbh)
 		var outgoings []outgoing.Outgoing
 		if err == nil {
-			outgoings, err = user.GetOutgoings(dbh)
+			outgoings, err = user.GetOutgoings()
 		}
 
 		if err != nil {
