@@ -70,6 +70,7 @@ func (server *Server) Initialise(dbh *sql.DB) {
 
 	server.Router.POST("/user", Auth(endpoints.LogInUser(dbh), dbh))
 	server.Router.GET("/user/:id/outgoings", Auth(endpoints.GetUserOutgoings(dbh), dbh))
+	server.Router.POST("/user/:id/add", Auth(endpoints.AddOutgoing(dbh), dbh))
 }
 
 func (server *Server) Run(addr string) {

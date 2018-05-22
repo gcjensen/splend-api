@@ -29,3 +29,7 @@ func respondWithJSON(writer http.ResponseWriter, code int, resp interface{}) {
 	writer.WriteHeader(code)
 	writer.Write(response)
 }
+
+func respondWithSuccess(writer http.ResponseWriter, code int, message string) {
+	respondWithJSON(writer, code, map[string]string{"message": message})
+}

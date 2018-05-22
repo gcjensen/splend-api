@@ -1,6 +1,7 @@
 package user
 
 import (
+	"fmt"
 	"github.com/gcjensen/settle-api/config"
 	"github.com/gcjensen/settle-api/outgoing"
 	"github.com/stretchr/testify/assert"
@@ -53,10 +54,10 @@ func TestNewFromDB(t *testing.T) {
 	user, err := NewFromDB(id, dbh)
 
 	assert.Nil(t, err)
-	newUser.ID = id
+	newUser.ID = &id
 	newUser.Partner.Name = "Marie"
+	newUser.dbh = dbh
 	newUser.Partner.ID = partnerID
-	newUser.DBH = dbh
 	assert.Equal(t, user, newUser)
 
 	user, err = NewFromDB(10000, dbh)
@@ -87,22 +88,61 @@ func TestGetOutgoings(t *testing.T) {
 	str := "2018-01-07T15:32:12.000Z"
 	timestamp, err := time.Parse(time.RFC3339, str)
 	newOutgoing := outgoing.Outgoing{
-		0, "Minerals", 200.00, 10.00, id, "General", nil, timestamp,
+		nil, "Minerals", 200.00, 10.00, id, "General", nil, &timestamp,
 	}
 	outgoingID := config.InsertTestOutgoing(
 		newOutgoing.Description,
 		newOutgoing.Amount,
 		newOutgoing.Owed,
 		newOutgoing.Spender,
-		newOutgoing.Timestamp,
+		*newOutgoing.Timestamp,
 		dbh,
 	)
-	newOutgoing.ID = outgoingID
+	newOutgoing.ID = &outgoingID
 
 	user, err := NewFromDB(id, dbh)
 	outgoings, err := user.GetOutgoings()
 
 	assert.Equal(t, []outgoing.Outgoing{newOutgoing}, outgoings)
+	assert.Nil(t, err)
+
+	config.DeleteAllData(dbh)
+}
+
+func TestAddOutgoings(t *testing.T) {
+
+	dbh := config.TestDBH()
+
+	coupleID := config.InsertTestCouple(dbh)
+	newUser := &User{
+		FirstName: "Hank",
+		LastName:  "Schrader",
+		Email:     "hank@schrader.com",
+	}
+	id := config.InsertTestUser(
+		newUser.FirstName,
+		newUser.LastName,
+		newUser.Email,
+		coupleID,
+		dbh,
+	)
+
+	newOutgoing := outgoing.Outgoing{
+		nil, "Fried chicken", 7.00, 3.5, id, "General", nil, nil,
+	}
+
+	user, err := NewFromDB(id, dbh)
+	err = user.AddOutgoing(newOutgoing)
+
+	statement := fmt.Sprintf(
+		`SELECT description, spender_id FROM outgoings LIMIT 1`,
+	)
+
+	var description string
+	var spenderID int
+	err = dbh.QueryRow(statement).Scan(&description, &spenderID)
+
+	assert.Equal(t, description, newOutgoing.Description)
 	assert.Nil(t, err)
 
 	config.DeleteAllData(dbh)

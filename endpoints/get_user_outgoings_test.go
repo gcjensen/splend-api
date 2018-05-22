@@ -31,17 +31,16 @@ func TestGetUserOutgoingsEndPoint(t *testing.T) {
 		dbh,
 	)
 
-	str := "2018-01-07T15:32:12.000Z"
-	timestamp, _ := time.Parse(time.RFC3339, str)
+	timestamp, _ := time.Parse(time.RFC3339, "2018-01-07T15:32:12.000Z")
 	newOutgoing := outgoing.Outgoing{
-		0, "Minerals", 200.00, 10.00, userID, "General", nil, timestamp,
+		nil, "Minerals", 200.00, 10.00, userID, "General", nil, &timestamp,
 	}
 	outgoingID := config.InsertTestOutgoing(
 		newOutgoing.Description,
 		newOutgoing.Amount,
 		newOutgoing.Owed,
 		newOutgoing.Spender,
-		newOutgoing.Timestamp,
+		*newOutgoing.Timestamp,
 		dbh,
 	)
 
@@ -62,9 +61,9 @@ func TestGetUserOutgoingsEndPoint(t *testing.T) {
 	expected := fmt.Sprintf(`[{`+
 		`"id":%d,`+
 		`"description":"Minerals",`+
-		`"amount":200,`+
-		`"owed":10,`+
-		`"spender":%d,`+
+		`"amount":"200",`+
+		`"owed":"10",`+
+		`"spender":"%d",`+
 		`"category":"General",`+
 		`"settled":null,`+
 		`"timestamp":"2018-01-07T15:32:12Z"`+

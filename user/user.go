@@ -8,8 +8,8 @@ import (
 )
 
 type User struct {
-	DBH       *sql.DB
-	ID        int    `json:"id"`
+	dbh       *sql.DB
+	ID        *int   `json:"id"`
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
 	Email     string `json:"email"`
@@ -24,7 +24,7 @@ func New(email string, dbh *sql.DB) (*User, error) {
 	// TODO: Parse email to check validity
 
 	self := &User{Email: email}
-	self.DBH = dbh
+	self.dbh = dbh
 
 	err := self.getInsertDetails(dbh)
 
@@ -47,6 +47,32 @@ func NewFromDB(id int, dbh *sql.DB) (*User, error) {
 	return New(email, dbh)
 }
 
+func (self *User) AddOutgoing(o outgoing.Outgoing) error {
+
+	statement := fmt.Sprintf(
+		`SELECT id FROM categories WHERE name = "%s"`,
+		o.Category,
+	)
+
+	var categoryID int
+	err := self.dbh.QueryRow(statement).Scan(&categoryID)
+
+	if err != nil {
+		return errors.New("Invalid category")
+	}
+
+	statement = fmt.Sprintf(`
+		INSERT INTO outgoings
+		(description, amount, owed, spender_id, category_id, settled, timestamp)
+		VALUES ("%s", %f, %f, %d, %d, NULL, NOW())`,
+		o.Description, o.Amount, o.Owed, o.Spender, categoryID,
+	)
+
+	_, err = self.dbh.Exec(statement)
+
+	return err
+}
+
 func (self *User) GetOutgoings() ([]outgoing.Outgoing, error) {
 	statement := fmt.Sprintf(`
 		SELECT o.id, description, amount, owed, spender_id, c.name, settled, timestamp
@@ -54,9 +80,9 @@ func (self *User) GetOutgoings() ([]outgoing.Outgoing, error) {
 		JOIN categories c ON o.category_id=c.id
 		WHERE spender_id IN (%d, %d)
 		ORDER BY o.timestamp DESC`,
-		self.ID, self.Partner.ID)
+		*self.ID, self.Partner.ID)
 
-	rows, err := self.DBH.Query(statement)
+	rows, err := self.dbh.Query(statement)
 
 	if err != nil {
 		return nil, err
@@ -121,7 +147,7 @@ func (self *User) getPartner(coupleID int, dbh *sql.DB) error {
 		SELECT id, first_name
 		FROM users
 		WHERE couple_id = %d AND id != %d`,
-		coupleID, self.ID)
+		coupleID, *self.ID)
 
 	err := dbh.QueryRow(statement).Scan(&self.Partner.ID, &self.Partner.Name)
 	if err != sql.ErrNoRows {
