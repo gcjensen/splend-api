@@ -88,7 +88,8 @@ func TestGetOutgoings(t *testing.T) {
 	str := "2018-01-07T15:32:12.000Z"
 	timestamp, err := time.Parse(time.RFC3339, str)
 	newOutgoing := outgoing.Outgoing{
-		nil, "Minerals", 200.00, 10.00, id, "General", nil, &timestamp,
+		Description: "Minerals", Amount: 200.00, Owed: 10.00, Spender: id,
+		Category: "General", Timestamp: &timestamp,
 	}
 	outgoingID := config.InsertTestOutgoing(
 		newOutgoing.Description,
@@ -128,7 +129,8 @@ func TestAddOutgoings(t *testing.T) {
 	)
 
 	newOutgoing := outgoing.Outgoing{
-		nil, "Fried chicken", 7.00, 3.5, id, "General", nil, nil,
+		Description: "Fried chicken", Amount: 7.00, Owed: 3.5, Spender: id,
+		Category: "General",
 	}
 
 	user, err := NewFromDB(id, dbh)

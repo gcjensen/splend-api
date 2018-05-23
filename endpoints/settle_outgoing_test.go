@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func TestGetUserOutgoingsEndPoint(t *testing.T) {
+func TestSettleOutgoing(t *testing.T) {
 	dbh := config.TestDBH()
 
 	coupleID := config.InsertTestCouple(dbh)
@@ -46,9 +46,11 @@ func TestGetUserOutgoingsEndPoint(t *testing.T) {
 	)
 
 	router := httprouter.New()
-	router.GET("/user/:id/outgoings", GetUserOutgoings(dbh))
+	router.POST("/outgoing/:outgoingID/:shouldSettle", SettleOutgoing(dbh))
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/user/%d/outgoings", userID), nil)
+	req, _ := http.NewRequest(
+		"POST", fmt.Sprintf("/outgoing/%d/1", outgoingID), nil,
+	)
 	rr := httptest.NewRecorder()
 
 	router.ServeHTTP(rr, req)
@@ -59,20 +61,25 @@ func TestGetUserOutgoingsEndPoint(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	expected := fmt.Sprintf(`[{`+
-		`"id":%d,`+
-		`"description":"Minerals",`+
-		`"amount":"200",`+
-		`"owed":"10",`+
-		`"spender":"%d",`+
-		`"category":"General",`+
-		`"settled":null,`+
-		`"timestamp":"2018-01-07T15:32:12Z"`+
-		`}]`, outgoingID, userID)
-
-	if rr.Body.String() != expected {
+	expectedResponse := `{"message":"Outgoing settled!"}`
+	if rr.Body.String() != expectedResponse {
 		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), expected)
+			rr.Body.String(), expectedResponse)
+	}
+
+	// Test un-settling
+
+	req, _ = http.NewRequest(
+		"POST", fmt.Sprintf("/outgoing/%d/0", outgoingID), nil,
+	)
+	rr = httptest.NewRecorder()
+
+	router.ServeHTTP(rr, req)
+
+	expectedResponse = `{"message":"Outgoing un-settled!"}`
+	if rr.Body.String() != expectedResponse {
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			rr.Body.String(), expectedResponse)
 	}
 
 	config.DeleteAllData(dbh)
