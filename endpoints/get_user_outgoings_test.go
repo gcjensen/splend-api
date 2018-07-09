@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gcjensen/settle-api/config"
 	"github.com/gcjensen/settle-api/outgoing"
+	"github.com/gcjensen/settle-api/test"
 	"github.com/gcjensen/settle-api/user"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
@@ -16,14 +17,14 @@ import (
 func TestGetUserOutgoingsEndPoint(t *testing.T) {
 	dbh := config.TestDBH()
 
-	coupleID := config.InsertTestCouple(dbh)
+	coupleID := test.InsertTestCouple(dbh)
 
 	newUser := &user.User{
 		FirstName: "Hank",
 		LastName:  "Schrader",
 		Email:     "hank@schrader.com",
 	}
-	userID := config.InsertTestUser(
+	userID := test.InsertTestUser(
 		newUser.FirstName,
 		newUser.LastName,
 		newUser.Email,
@@ -36,7 +37,7 @@ func TestGetUserOutgoingsEndPoint(t *testing.T) {
 		Description: "Minerals", Amount: 200.00, Owed: 10.00, Spender: userID,
 		Category: "General", Timestamp: &timestamp,
 	}
-	outgoingID := config.InsertTestOutgoing(
+	outgoingID := test.InsertTestOutgoing(
 		newOutgoing.Description,
 		newOutgoing.Amount,
 		newOutgoing.Owed,
@@ -75,5 +76,5 @@ func TestGetUserOutgoingsEndPoint(t *testing.T) {
 			rr.Body.String(), expected)
 	}
 
-	config.DeleteAllData(dbh)
+	test.DeleteAllData(dbh)
 }

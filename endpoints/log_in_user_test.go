@@ -3,6 +3,7 @@ package endpoints
 import (
 	"fmt"
 	"github.com/gcjensen/settle-api/config"
+	"github.com/gcjensen/settle-api/test"
 	"github.com/gcjensen/settle-api/user"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
@@ -14,7 +15,7 @@ import (
 func TestLogInUser(t *testing.T) {
 	dbh := config.TestDBH()
 
-	coupleID := config.InsertTestCouple(dbh)
+	coupleID := test.InsertTestCouple(dbh)
 
 	// Inserted so the partner of Hank can be tested
 	partner := &user.User{
@@ -22,7 +23,7 @@ func TestLogInUser(t *testing.T) {
 		LastName:  "Schrader",
 		Email:     "marie@schrader.com",
 	}
-	config.InsertTestUser(
+	test.InsertTestUser(
 		partner.FirstName,
 		partner.LastName,
 		partner.Email,
@@ -35,7 +36,7 @@ func TestLogInUser(t *testing.T) {
 		LastName:  "Schrader",
 		Email:     "hank@schrader.com",
 	}
-	id := config.InsertTestUser(
+	id := test.InsertTestUser(
 		newUser.FirstName,
 		newUser.LastName,
 		newUser.Email,
@@ -70,5 +71,5 @@ func TestLogInUser(t *testing.T) {
 			rr.Body.String(), expected)
 	}
 
-	config.DeleteAllData(dbh)
+	test.DeleteAllData(dbh)
 }

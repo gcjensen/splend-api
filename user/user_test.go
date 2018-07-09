@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gcjensen/settle-api/config"
 	"github.com/gcjensen/settle-api/outgoing"
+	"github.com/gcjensen/settle-api/test"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -16,13 +17,13 @@ func TestNew(t *testing.T) {
 	_, err := New(email, dbh)
 
 	assert.Equal(t, err.Error(), "User creation not yet implemented")
-	config.DeleteAllData(dbh)
+	test.DeleteAllData(dbh)
 }
 
 func TestNewFromDB(t *testing.T) {
 	dbh := config.TestDBH()
 
-	coupleID := config.InsertTestCouple(dbh)
+	coupleID := test.InsertTestCouple(dbh)
 
 	// Inserted so the partner of Hank can be tested
 	partner := &User{
@@ -30,7 +31,7 @@ func TestNewFromDB(t *testing.T) {
 		LastName:  "Schrader",
 		Email:     "marie@schrader.com",
 	}
-	partnerID := config.InsertTestUser(
+	partnerID := test.InsertTestUser(
 		partner.FirstName,
 		partner.LastName,
 		partner.Email,
@@ -43,7 +44,7 @@ func TestNewFromDB(t *testing.T) {
 		LastName:  "Schrader",
 		Email:     "hank@schrader.com",
 	}
-	id := config.InsertTestUser(
+	id := test.InsertTestUser(
 		newUser.FirstName,
 		newUser.LastName,
 		newUser.Email,
@@ -64,20 +65,20 @@ func TestNewFromDB(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, err.Error(), "Unknown user")
 
-	config.DeleteAllData(dbh)
+	test.DeleteAllData(dbh)
 }
 
 func TestGetOutgoings(t *testing.T) {
 
 	dbh := config.TestDBH()
 
-	coupleID := config.InsertTestCouple(dbh)
+	coupleID := test.InsertTestCouple(dbh)
 	newUser := &User{
 		FirstName: "Hank",
 		LastName:  "Schrader",
 		Email:     "hank@schrader.com",
 	}
-	id := config.InsertTestUser(
+	id := test.InsertTestUser(
 		newUser.FirstName,
 		newUser.LastName,
 		newUser.Email,
@@ -91,7 +92,7 @@ func TestGetOutgoings(t *testing.T) {
 		Description: "Minerals", Amount: 200.00, Owed: 10.00, Spender: id,
 		Category: "General", Timestamp: &timestamp,
 	}
-	outgoingID := config.InsertTestOutgoing(
+	outgoingID := test.InsertTestOutgoing(
 		newOutgoing.Description,
 		newOutgoing.Amount,
 		newOutgoing.Owed,
@@ -107,20 +108,20 @@ func TestGetOutgoings(t *testing.T) {
 	assert.Equal(t, []outgoing.Outgoing{newOutgoing}, outgoings)
 	assert.Nil(t, err)
 
-	config.DeleteAllData(dbh)
+	test.DeleteAllData(dbh)
 }
 
 func TestAddOutgoings(t *testing.T) {
 
 	dbh := config.TestDBH()
 
-	coupleID := config.InsertTestCouple(dbh)
+	coupleID := test.InsertTestCouple(dbh)
 	newUser := &User{
 		FirstName: "Hank",
 		LastName:  "Schrader",
 		Email:     "hank@schrader.com",
 	}
-	id := config.InsertTestUser(
+	id := test.InsertTestUser(
 		newUser.FirstName,
 		newUser.LastName,
 		newUser.Email,
@@ -147,5 +148,5 @@ func TestAddOutgoings(t *testing.T) {
 	assert.Equal(t, description, newOutgoing.Description)
 	assert.Nil(t, err)
 
-	config.DeleteAllData(dbh)
+	test.DeleteAllData(dbh)
 }

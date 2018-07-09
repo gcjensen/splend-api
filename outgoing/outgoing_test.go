@@ -3,6 +3,7 @@ package outgoing
 import (
 	"database/sql"
 	"github.com/gcjensen/settle-api/config"
+	"github.com/gcjensen/settle-api/test"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -21,7 +22,7 @@ func TestNew(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, "Proper outgoing creation not yet implemented", err.Error())
 
-	config.DeleteAllData(dbh)
+	test.DeleteAllData(dbh)
 }
 
 func TestDelete(t *testing.T) {
@@ -30,12 +31,12 @@ func TestDelete(t *testing.T) {
 
 	err := testOutgoing.Delete()
 
-	count := config.GetOutgoingCount(dbh)
+	count := test.GetOutgoingCount(dbh)
 
 	assert.Nil(t, err)
 	assert.Equal(t, count, 0)
 
-	config.DeleteAllData(dbh)
+	test.DeleteAllData(dbh)
 }
 
 func TestToggleSettled(t *testing.T) {
@@ -51,16 +52,18 @@ func TestToggleSettled(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, outgoing.Settled)
 
-	config.DeleteAllData(dbh)
+	test.DeleteAllData(dbh)
 }
 
 /************************** Private Implementation ****************************/
 
-// Uses the functions in testdata.go to insert a outgoing (and the required
-// user)
+/*
+ * Uses the functions in the test package to insert an outgoing (and the
+ * required user)
+ */
 func insertTestOutgoing(dbh *sql.DB) Outgoing {
-	coupleID := config.InsertTestCouple(dbh)
-	userID := config.InsertTestUser(
+	coupleID := test.InsertTestCouple(dbh)
+	userID := test.InsertTestUser(
 		"Wade", "Wilson", "wade@wilson.com", coupleID, dbh,
 	)
 
@@ -69,7 +72,7 @@ func insertTestOutgoing(dbh *sql.DB) Outgoing {
 	testOutgoing := Outgoing{
 		nil, "New suit", 200.00, 10.00, userID, "General", nil, &timestamp, dbh,
 	}
-	outgoingID := config.InsertTestOutgoing(
+	outgoingID := test.InsertTestOutgoing(
 		testOutgoing.Description,
 		testOutgoing.Amount,
 		testOutgoing.Owed,
