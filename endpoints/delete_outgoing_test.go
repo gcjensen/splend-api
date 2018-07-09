@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func TestSettleOutgoing(t *testing.T) {
+func TestDeleteOutgoing(t *testing.T) {
 	dbh := config.TestDBH()
 
 	coupleID := test.InsertTestCouple(dbh)
@@ -47,13 +47,10 @@ func TestSettleOutgoing(t *testing.T) {
 	)
 
 	router := httprouter.New()
-	router.POST(
-		"/outgoing/settle/:outgoingID/:shouldSettle",
-		SettleOutgoing(dbh),
-	)
+	router.POST("/outgoing/delete/:outgoingID", DeleteOutgoing(dbh))
 
 	req, _ := http.NewRequest(
-		"POST", fmt.Sprintf("/outgoing/settle/%d/1", outgoingID), nil,
+		"POST", fmt.Sprintf("/outgoing/delete/%d", outgoingID), nil,
 	)
 	rr := httptest.NewRecorder()
 
@@ -65,22 +62,7 @@ func TestSettleOutgoing(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	expectedResponse := `{"message":"Outgoing settled!"}`
-	if rr.Body.String() != expectedResponse {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), expectedResponse)
-	}
-
-	// Test un-settling
-
-	req, _ = http.NewRequest(
-		"POST", fmt.Sprintf("/outgoing/settle/%d/0", outgoingID), nil,
-	)
-	rr = httptest.NewRecorder()
-
-	router.ServeHTTP(rr, req)
-
-	expectedResponse = `{"message":"Outgoing un-settled!"}`
+	expectedResponse := `{"message":"Outgoing deleted!"}`
 	if rr.Body.String() != expectedResponse {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expectedResponse)

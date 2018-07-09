@@ -54,8 +54,12 @@ func (server *Server) Initialise(dbh *sql.DB) {
 	server.Router.GET("/user/:id/outgoings", Auth(endpoints.GetUserOutgoings(dbh), dbh))
 	server.Router.POST("/user/:id/add", Auth(endpoints.AddOutgoing(dbh), dbh))
 	server.Router.POST(
-		"/outgoing/:outgoingID/:shouldSettle",
+		"/outgoing/settle/:outgoingID/:shouldSettle",
 		Auth(endpoints.SettleOutgoing(dbh), dbh),
+	)
+	server.Router.POST(
+		"/outgoing/delete/:outgoingID",
+		Auth(endpoints.DeleteOutgoing(dbh), dbh),
 	)
 }
 
