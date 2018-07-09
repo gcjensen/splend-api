@@ -6,6 +6,23 @@ import (
 	"time"
 )
 
+func DeleteAllData(dbh *sql.DB) {
+	dbh.Exec("DELETE FROM outgoings")
+	dbh.Exec("ALTER TABLE outgoings AUTO_INCREMENT = 1")
+	dbh.Exec("DELETE FROM users")
+	dbh.Exec("ALTER TABLE users AUTO_INCREMENT = 1")
+	dbh.Exec("DELETE FROM couples")
+	dbh.Exec("ALTER TABLE couples AUTO_INCREMENT = 1")
+}
+
+func GetOutgoingCount(dbh *sql.DB) int {
+	statement := `SELECT count FROM outgoings`
+	var count int
+	dbh.QueryRow(statement).Scan(&count)
+
+	return count
+}
+
 func InsertTestUser(
 	firstName string,
 	lastName string,
@@ -60,21 +77,4 @@ func InsertTestOutgoing(
 	var id int
 	dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&id)
 	return id
-}
-
-func GetOutgoingCount(dbh *sql.DB) int {
-	statement := `SELECT count FROM outgoings`
-	var count int
-	dbh.QueryRow(statement).Scan(&count)
-
-	return count
-}
-
-func DeleteAllData(dbh *sql.DB) {
-	dbh.Exec("DELETE FROM outgoings")
-	dbh.Exec("ALTER TABLE outgoings AUTO_INCREMENT = 1")
-	dbh.Exec("DELETE FROM users")
-	dbh.Exec("ALTER TABLE users AUTO_INCREMENT = 1")
-	dbh.Exec("DELETE FROM couples")
-	dbh.Exec("ALTER TABLE couples AUTO_INCREMENT = 1")
 }
