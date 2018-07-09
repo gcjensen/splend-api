@@ -62,6 +62,14 @@ func InsertTestOutgoing(
 	return id
 }
 
+func GetOutgoingCount(dbh *sql.DB) int {
+	statement := `SELECT count FROM outgoings`
+	var count int
+	dbh.QueryRow(statement).Scan(&count)
+
+	return count
+}
+
 func DeleteAllData(dbh *sql.DB) {
 	dbh.Exec("DELETE FROM outgoings")
 	dbh.Exec("ALTER TABLE outgoings AUTO_INCREMENT = 1")

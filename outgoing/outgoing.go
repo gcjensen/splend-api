@@ -29,6 +29,13 @@ func New(id int, dbh *sql.DB) (*Outgoing, error) {
 	return self, err
 }
 
+func (self *Outgoing) Delete() error {
+	statement := fmt.Sprintf(`DELETE FROM outgoings WHERE id = %d`, *self.ID)
+	_, err := self.dbh.Exec(statement)
+
+	return err
+}
+
 func (self *Outgoing) ToggleSettled(settled bool) error {
 	var statement string
 	if settled {
