@@ -27,14 +27,15 @@ func InsertTestUser(
 	firstName string,
 	lastName string,
 	email string,
+	colour string,
 	coupleID int,
 	dbh *sql.DB,
 ) int {
 	statement := fmt.Sprintf(`
 		INSERT INTO users
-		(first_name, last_name, email, couple_id)
-		VALUES ("%s", "%s", "%s", %d)`,
-		firstName, lastName, email, coupleID)
+		(first_name, last_name, email, couple_id, colour)
+		VALUES ("%s", "%s", "%s", %d, "%s")`,
+		firstName, lastName, email, coupleID, colour)
 
 	dbh.Exec(statement)
 

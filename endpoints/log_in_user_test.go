@@ -17,16 +17,20 @@ func TestLogInUser(t *testing.T) {
 
 	coupleID := test.InsertTestCouple(dbh)
 
+	colour := "FFFFFF"
+
 	// Inserted so the partner of Hank can be tested
 	partner := &user.User{
 		FirstName: "Marie",
 		LastName:  "Schrader",
 		Email:     "marie@schrader.com",
+		Colour:    &colour,
 	}
 	test.InsertTestUser(
 		partner.FirstName,
 		partner.LastName,
 		partner.Email,
+		*partner.Colour,
 		coupleID,
 		dbh,
 	)
@@ -35,11 +39,13 @@ func TestLogInUser(t *testing.T) {
 		FirstName: "Hank",
 		LastName:  "Schrader",
 		Email:     "hank@schrader.com",
+		Colour:    &colour,
 	}
 	id := test.InsertTestUser(
 		newUser.FirstName,
 		newUser.LastName,
 		newUser.Email,
+		*newUser.Colour,
 		coupleID,
 		dbh,
 	)
@@ -63,7 +69,8 @@ func TestLogInUser(t *testing.T) {
 		`"firstName":"Hank",`+
 		`"lastName":"Schrader",`+
 		`"email":"hank@schrader.com",`+
-		`"partner":{"id":1,"name":"Marie"}`+
+		`"colour":"FFFFFF",`+
+		`"partner":{"id":1,"name":"Marie","colour":"FFFFFF"}`+
 		`}`, id)
 
 	if rr.Body.String() != expected {

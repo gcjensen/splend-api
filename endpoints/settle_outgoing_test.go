@@ -28,6 +28,7 @@ func TestSettleOutgoing(t *testing.T) {
 		newUser.FirstName,
 		newUser.LastName,
 		newUser.Email,
+		"",
 		coupleID,
 		dbh,
 	)

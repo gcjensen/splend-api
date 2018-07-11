@@ -64,7 +64,7 @@ func TestToggleSettled(t *testing.T) {
 func insertTestOutgoing(dbh *sql.DB) Outgoing {
 	coupleID := test.InsertTestCouple(dbh)
 	userID := test.InsertTestUser(
-		"Wade", "Wilson", "wade@wilson.com", coupleID, dbh,
+		"Wade", "Wilson", "wade@wilson.com", "", coupleID, dbh,
 	)
 
 	str := "2018-01-07T15:32:12.000Z"

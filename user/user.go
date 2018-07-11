@@ -9,13 +9,15 @@ import (
 
 type User struct {
 	dbh       *sql.DB
-	ID        *int   `json:"id"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Email     string `json:"email"`
+	ID        *int    `json:"id"`
+	FirstName string  `json:"firstName"`
+	LastName  string  `json:"lastName"`
+	Email     string  `json:"email"`
+	Colour    *string `json:"colour"`
 	Partner   struct {
-		ID   int    `json:"id"`
-		Name string `json:"name"`
+		ID     int     `json:"id"`
+		Name   string  `json:"name"`
+		Colour *string `json:"colour"`
 	} `json:"partner"`
 }
 
@@ -118,7 +120,7 @@ func (self *User) getInsertDetails(dbh *sql.DB) error {
 
 func (self *User) getUser(dbh *sql.DB) error {
 	statement := fmt.Sprintf(`
-        SELECT id, first_name, last_name, couple_id
+        SELECT id, first_name, last_name, couple_id, colour
         FROM users
         WHERE email="%s"`, self.Email)
 
@@ -128,6 +130,7 @@ func (self *User) getUser(dbh *sql.DB) error {
 		&self.FirstName,
 		&self.LastName,
 		&coupleID,
+		&self.Colour,
 	)
 
 	if err != nil {
@@ -144,12 +147,17 @@ func (self *User) getUser(dbh *sql.DB) error {
 
 func (self *User) getPartner(coupleID int, dbh *sql.DB) error {
 	statement := fmt.Sprintf(`
-		SELECT id, first_name
+		SELECT id, first_name, colour
 		FROM users
 		WHERE couple_id = %d AND id != %d`,
 		coupleID, *self.ID)
 
-	err := dbh.QueryRow(statement).Scan(&self.Partner.ID, &self.Partner.Name)
+	err := dbh.QueryRow(statement).Scan(
+		&self.Partner.ID,
+		&self.Partner.Name,
+		&self.Partner.Colour,
+	)
+
 	if err != sql.ErrNoRows {
 		return err
 	}

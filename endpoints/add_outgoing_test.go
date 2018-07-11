@@ -28,6 +28,7 @@ func TestAddOutgoing(t *testing.T) {
 		newUser.FirstName,
 		newUser.LastName,
 		newUser.Email,
+		"",
 		coupleID,
 		dbh,
 	)

@@ -25,16 +25,20 @@ func TestNewFromDB(t *testing.T) {
 
 	coupleID := test.InsertTestCouple(dbh)
 
+	colour := "FFFFFF"
+
 	// Inserted so the partner of Hank can be tested
 	partner := &User{
 		FirstName: "Marie",
 		LastName:  "Schrader",
 		Email:     "marie@schrader.com",
+		Colour:    &colour,
 	}
 	partnerID := test.InsertTestUser(
 		partner.FirstName,
 		partner.LastName,
 		partner.Email,
+		*partner.Colour,
 		coupleID,
 		dbh,
 	)
@@ -43,11 +47,13 @@ func TestNewFromDB(t *testing.T) {
 		FirstName: "Hank",
 		LastName:  "Schrader",
 		Email:     "hank@schrader.com",
+		Colour:    &colour,
 	}
 	id := test.InsertTestUser(
 		newUser.FirstName,
 		newUser.LastName,
 		newUser.Email,
+		*newUser.Colour,
 		coupleID,
 		dbh,
 	)
@@ -57,6 +63,7 @@ func TestNewFromDB(t *testing.T) {
 	assert.Nil(t, err)
 	newUser.ID = &id
 	newUser.Partner.Name = "Marie"
+	newUser.Partner.Colour = &colour
 	newUser.dbh = dbh
 	newUser.Partner.ID = partnerID
 	assert.Equal(t, user, newUser)
@@ -82,6 +89,7 @@ func TestGetOutgoings(t *testing.T) {
 		newUser.FirstName,
 		newUser.LastName,
 		newUser.Email,
+		"",
 		coupleID,
 		dbh,
 	)
@@ -125,6 +133,7 @@ func TestAddOutgoings(t *testing.T) {
 		newUser.FirstName,
 		newUser.LastName,
 		newUser.Email,
+		"",
 		coupleID,
 		dbh,
 	)
