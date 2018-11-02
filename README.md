@@ -1,2 +1,2 @@
-# settle-api
-The RESTful API behind the Settle iOS app
+# splend-api
+The RESTful API behind the Splend iOS app
