@@ -2,85 +2,81 @@ package outgoing
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	"github.com/gcjensen/settle-api/config"
-	"github.com/gcjensen/settle-api/test"
+	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/assert"
+	"math"
+	"math/rand"
 	"testing"
-	"time"
 )
 
 func TestNew(t *testing.T) {
 	dbh := config.TestDBH()
-	testOutgoing := insertTestOutgoing(dbh)
 
-	outgoing, err := New(*testOutgoing.ID, dbh)
+	randomOutgoing := randomOutgoing(dbh)
+	outgoing, err := New(randomOutgoing, dbh)
+	outgoing.dbh = dbh
+
+	outgoingFromDB, err := NewFromDB(*outgoing.ID, dbh)
+	outgoing.Timestamp = outgoingFromDB.Timestamp
 
 	assert.Nil(t, err)
-	assert.Equal(t, &testOutgoing, outgoing)
+	assert.Equal(t, outgoing, outgoingFromDB)
 
-	outgoing, err = New(10000, dbh)
+	outgoing, err = NewFromDB(10000, dbh)
 	assert.NotNil(t, err)
-	assert.Equal(t, "Proper outgoing creation not yet implemented", err.Error())
-
-	test.DeleteAllData(dbh)
 }
 
 func TestDelete(t *testing.T) {
 	dbh := config.TestDBH()
-	testOutgoing := insertTestOutgoing(dbh)
+	randomOutgoing := randomOutgoing(dbh)
+	outgoing, err := New(randomOutgoing, dbh)
+	outgoing.dbh = dbh
 
-	err := testOutgoing.Delete()
-
-	count := test.GetOutgoingCount(dbh)
-
+	err = outgoing.Delete()
 	assert.Nil(t, err)
-	assert.Equal(t, count, 0)
 
-	test.DeleteAllData(dbh)
+	_, err = NewFromDB(*outgoing.ID, dbh)
+
+	assert.Equal(t, err, errors.New("Unknown outgoing"))
 }
 
 func TestToggleSettled(t *testing.T) {
 	dbh := config.TestDBH()
-	testOutgoing := insertTestOutgoing(dbh)
-
-	outgoing, _ := New(*testOutgoing.ID, dbh)
+	randomOutgoing := randomOutgoing(dbh)
+	outgoing, err := New(randomOutgoing, dbh)
+	outgoing.dbh = dbh
 
 	assert.Nil(t, outgoing.Settled)
 
-	err := outgoing.ToggleSettled(true)
+	err = outgoing.ToggleSettled(true)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, outgoing.Settled)
-
-	test.DeleteAllData(dbh)
 }
 
 /************************** Private Implementation ****************************/
 
-/*
- * Uses the functions in the test package to insert an outgoing (and the
- * required user)
- */
-func insertTestOutgoing(dbh *sql.DB) Outgoing {
-	coupleID := test.InsertTestCouple(dbh)
-	userID := test.InsertTestUser(
-		"Wade", "Wilson", "wade@wilson.com", "", coupleID, dbh,
-	)
+func randomOutgoing(dbh *sql.DB) *Outgoing {
+	statement := fmt.Sprintf(`
+		INSERT INTO users
+		(first_name, last_name, email)
+		VALUES ("%s", "%s", "%s")`,
+		fake.FirstName(), fake.LastName(), fake.EmailAddress())
 
-	str := "2018-01-07T15:32:12.000Z"
-	timestamp, _ := time.Parse(time.RFC3339, str)
-	testOutgoing := Outgoing{
-		nil, "New suit", 200.00, 10.00, userID, "General", nil, &timestamp, dbh,
+	dbh.Exec(statement)
+
+	var spenderID int
+	dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&spenderID)
+
+	amount := math.Ceil(rand.Float64()*100) / 100
+	return &Outgoing{
+		Description: fake.ProductName(),
+		Amount:      amount,
+		Owed:        amount / 2,
+		Category:    fake.Product(),
+		Spender:     spenderID,
 	}
-	outgoingID := test.InsertTestOutgoing(
-		testOutgoing.Description,
-		testOutgoing.Amount,
-		testOutgoing.Owed,
-		testOutgoing.Spender,
-		*testOutgoing.Timestamp,
-		dbh,
-	)
-	testOutgoing.ID = &outgoingID
-
-	return testOutgoing
 }

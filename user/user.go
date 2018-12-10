@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gcjensen/settle-api/outgoing"
+	"strconv"
+	"strings"
 )
 
 type User struct {
@@ -14,21 +16,15 @@ type User struct {
 	LastName  string  `json:"lastName"`
 	Email     string  `json:"email"`
 	Colour    *string `json:"colour"`
-	Partner   struct {
-		ID     int     `json:"id"`
-		Name   string  `json:"name"`
-		Colour *string `json:"colour"`
-	} `json:"partner"`
+	Partner   *User   `json:"partner"`
+	CoupleID  *int    `json:"-"`
 }
 
-func New(email string, dbh *sql.DB) (*User, error) {
-
-	// TODO: Parse email to check validity
-
-	self := &User{Email: email}
+func New(user *User, dbh *sql.DB) (*User, error) {
+	self := user
 	self.dbh = dbh
 
-	err := self.getInsertDetails(dbh)
+	err := self.getInsertDetails()
 
 	return self, err
 }
@@ -39,50 +35,34 @@ func NewFromDB(id int, dbh *sql.DB) (*User, error) {
         FROM users
         WHERE id=%d`, id)
 
-	var email string
-	err := dbh.QueryRow(statement).Scan(&email)
+	self := &User{dbh: dbh}
+	err := dbh.QueryRow(statement).Scan(&self.Email)
 
 	if err != nil {
 		return nil, errors.New("Unknown user")
 	}
 
-	return New(email, dbh)
+	err = self.getUser()
+
+	return self, err
 }
 
-func (self *User) AddOutgoing(o outgoing.Outgoing) error {
-
-	statement := fmt.Sprintf(
-		`SELECT id FROM categories WHERE name = "%s"`,
-		o.Category,
-	)
-
-	var categoryID int
-	err := self.dbh.QueryRow(statement).Scan(&categoryID)
-
-	if err != nil {
-		return errors.New("Invalid category")
-	}
-
-	statement = fmt.Sprintf(`
-		INSERT INTO outgoings
-		(description, amount, owed, spender_id, category_id, settled, timestamp)
-		VALUES ("%s", %f, %f, %d, %d, NULL, NOW())`,
-		o.Description, o.Amount, o.Owed, o.Spender, categoryID,
-	)
-
-	_, err = self.dbh.Exec(statement)
-
+func (self *User) AddOutgoing(o *outgoing.Outgoing) error {
+	o.Spender = *self.ID
+	_, err := outgoing.New(o, self.dbh)
 	return err
 }
 
 func (self *User) GetOutgoings() ([]outgoing.Outgoing, error) {
+	ids := []string{strconv.Itoa(*self.ID), "0"}
 	statement := fmt.Sprintf(`
-		SELECT o.id, description, amount, owed, spender_id, c.name, settled, timestamp
+		SELECT o.id, description, amount, owed, spender_id, c.name, settled,
+		timestamp
 		FROM outgoings o
 		JOIN categories c ON o.category_id=c.id
-		WHERE spender_id IN (%d, %d)
+		WHERE spender_id IN (%s)
 		ORDER BY o.timestamp DESC`,
-		*self.ID, self.Partner.ID)
+		strings.Join(ids, ","))
 
 	rows, err := self.dbh.Query(statement)
 
@@ -108,28 +88,52 @@ func (self *User) GetOutgoings() ([]outgoing.Outgoing, error) {
 
 /************************** Private Implementation ****************************/
 
-func (self *User) getInsertDetails(dbh *sql.DB) error {
-	err := self.getUser(dbh)
+func (self *User) addCouple() int {
+	statement := fmt.Sprintf(
+		`INSERT INTO couples (joining_date) VALUES ("2018-01-01")`,
+	)
+
+	self.dbh.Exec(statement)
+
+	var id int
+	self.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&id)
+	return id
+}
+
+func (self *User) getInsertDetails() error {
+	err := self.getUser()
 	if err != nil {
-		// TODO implement user creation
-		return errors.New("User creation not yet implemented")
+		if self.CoupleID == nil {
+			coupleID := self.addCouple()
+			self.CoupleID = &coupleID
+		}
+		statement := fmt.Sprintf(`
+			INSERT INTO users
+			(first_name, last_name, email, couple_id, colour)
+			VALUES ("%s", "%s", "%s", %d, "%s")`,
+			self.FirstName, self.LastName, self.Email, *self.CoupleID,
+			*self.Colour)
+
+		_, err = self.dbh.Exec(statement)
+
+		self.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&self.ID)
+		self.getPartner()
 	}
 
 	return nil
 }
 
-func (self *User) getUser(dbh *sql.DB) error {
+func (self *User) getUser() error {
 	statement := fmt.Sprintf(`
         SELECT id, first_name, last_name, couple_id, colour
         FROM users
         WHERE email="%s"`, self.Email)
 
-	var coupleID int
-	err := dbh.QueryRow(statement).Scan(
+	err := self.dbh.QueryRow(statement).Scan(
 		&self.ID,
 		&self.FirstName,
 		&self.LastName,
-		&coupleID,
+		&self.CoupleID,
 		&self.Colour,
 	)
 
@@ -137,7 +141,7 @@ func (self *User) getUser(dbh *sql.DB) error {
 		return errors.New("Unknown user")
 	}
 
-	err = self.getPartner(coupleID, dbh)
+	err = self.getPartner()
 	if err != nil {
 		return err
 	}
@@ -145,18 +149,27 @@ func (self *User) getUser(dbh *sql.DB) error {
 	return err
 }
 
-func (self *User) getPartner(coupleID int, dbh *sql.DB) error {
+func (self *User) getPartner() error {
+	if self.CoupleID == nil {
+		return errors.New("No partner")
+	}
+
 	statement := fmt.Sprintf(`
-		SELECT id, first_name, colour
+        SELECT id, first_name, last_name, email, colour, couple_id
 		FROM users
 		WHERE couple_id = %d AND id != %d`,
-		coupleID, *self.ID)
+		*self.CoupleID, *self.ID)
 
-	err := dbh.QueryRow(statement).Scan(
-		&self.Partner.ID,
-		&self.Partner.Name,
-		&self.Partner.Colour,
+	partner := &User{}
+	err := self.dbh.QueryRow(statement).Scan(
+		&partner.ID,
+		&partner.FirstName,
+		&partner.LastName,
+		&partner.Email,
+		&partner.Colour,
+		&partner.CoupleID,
 	)
+	self.Partner = partner
 
 	if err != sql.ErrNoRows {
 		return err

@@ -3,54 +3,28 @@ package endpoints
 import (
 	"fmt"
 	"github.com/gcjensen/settle-api/config"
-	"github.com/gcjensen/settle-api/outgoing"
-	"github.com/gcjensen/settle-api/test"
 	"github.com/gcjensen/settle-api/user"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
-	"time"
 )
 
 func TestGetUserOutgoingsEndPoint(t *testing.T) {
 	dbh := config.TestDBH()
 
-	coupleID := test.InsertTestCouple(dbh)
-
-	newUser := &user.User{
-		FirstName: "Hank",
-		LastName:  "Schrader",
-		Email:     "hank@schrader.com",
-	}
-	userID := test.InsertTestUser(
-		newUser.FirstName,
-		newUser.LastName,
-		newUser.Email,
-		"",
-		coupleID,
-		dbh,
-	)
-
-	timestamp, _ := time.Parse(time.RFC3339, "2018-01-07T15:32:12.000Z")
-	newOutgoing := outgoing.Outgoing{
-		Description: "Minerals", Amount: 200.00, Owed: 10.00, Spender: userID,
-		Category: "General", Timestamp: &timestamp,
-	}
-	outgoingID := test.InsertTestOutgoing(
-		newOutgoing.Description,
-		newOutgoing.Amount,
-		newOutgoing.Owed,
-		newOutgoing.Spender,
-		*newOutgoing.Timestamp,
-		dbh,
-	)
+	user, _ := user.New(randomUser(), dbh)
+	user.AddOutgoing(randomOutgoing())
+	outgoings, _ := user.GetOutgoings()
+	outgoing := outgoings[0]
 
 	router := httprouter.New()
 	router.GET("/user/:id/outgoings", GetUserOutgoings(dbh))
 
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/user/%d/outgoings", userID), nil)
+	url := fmt.Sprintf("/user/%d/outgoings", *user.ID)
+	req, _ := http.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
 
 	router.ServeHTTP(rr, req)
@@ -61,21 +35,22 @@ func TestGetUserOutgoingsEndPoint(t *testing.T) {
 			status, http.StatusOK)
 	}
 
+	splitTime := strings.Split(outgoing.Timestamp.String(), " ")
+	timestamp := splitTime[0] + "T" + splitTime[1] + "Z"
+
 	expected := fmt.Sprintf(`[{`+
 		`"id":%d,`+
-		`"description":"Minerals",`+
-		`"amount":"200",`+
-		`"owed":"10",`+
+		`"description":"`+outgoing.Description+`",`+
+		`"amount":"%.2f",`+
+		`"owed":"%.2f",`+
 		`"spender":"%d",`+
-		`"category":"General",`+
+		`"category":"`+outgoing.Category+`",`+
 		`"settled":null,`+
-		`"timestamp":"2018-01-07T15:32:12Z"`+
-		`}]`, outgoingID, userID)
+		`"timestamp":"`+timestamp+`"`+
+		`}]`, *outgoing.ID, outgoing.Amount, outgoing.Owed, *user.ID)
 
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expected)
 	}
-
-	test.DeleteAllData(dbh)
 }

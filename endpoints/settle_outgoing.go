@@ -17,7 +17,7 @@ func SettleOutgoing(dbh *sql.DB) httprouter.Handle {
 
 		// Pull out into some sort of reuable param verification logic
 		id, err := strconv.Atoi(params.ByName("outgoingID"))
-		outgoing, err := outgoing.New(id, dbh)
+		outgoing, err := outgoing.NewFromDB(id, dbh)
 
 		var shouldSettle int
 		if err == nil {

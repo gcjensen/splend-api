@@ -1,161 +1,75 @@
 package user
 
 import (
-	"fmt"
 	"github.com/gcjensen/settle-api/config"
 	"github.com/gcjensen/settle-api/outgoing"
-	"github.com/gcjensen/settle-api/test"
+	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/assert"
+	"math"
+	"math/rand"
 	"testing"
-	"time"
 )
 
-func TestNew(t *testing.T) {
+func TestNewAndNewFromDB(t *testing.T) {
 	dbh := config.TestDBH()
 
-	email := "jesse@pinkman.com"
-	_, err := New(email, dbh)
+	user, err := New(randomUser(), dbh)
 
-	assert.Equal(t, err.Error(), "User creation not yet implemented")
-	test.DeleteAllData(dbh)
-}
+	randomPartner := randomUser()
+	randomPartner.CoupleID = user.CoupleID
+	partner, err := New(randomPartner, dbh)
+	partner.dbh = nil
 
-func TestNewFromDB(t *testing.T) {
-	dbh := config.TestDBH()
+	partner.Partner = nil
+	user.Partner = partner
 
-	coupleID := test.InsertTestCouple(dbh)
-
-	colour := "FFFFFF"
-
-	// Inserted so the partner of Hank can be tested
-	partner := &User{
-		FirstName: "Marie",
-		LastName:  "Schrader",
-		Email:     "marie@schrader.com",
-		Colour:    &colour,
-	}
-	partnerID := test.InsertTestUser(
-		partner.FirstName,
-		partner.LastName,
-		partner.Email,
-		*partner.Colour,
-		coupleID,
-		dbh,
-	)
-
-	newUser := &User{
-		FirstName: "Hank",
-		LastName:  "Schrader",
-		Email:     "hank@schrader.com",
-		Colour:    &colour,
-	}
-	id := test.InsertTestUser(
-		newUser.FirstName,
-		newUser.LastName,
-		newUser.Email,
-		*newUser.Colour,
-		coupleID,
-		dbh,
-	)
-
-	user, err := NewFromDB(id, dbh)
+	userFromDB, err := NewFromDB(*user.ID, dbh)
 
 	assert.Nil(t, err)
-	newUser.ID = &id
-	newUser.Partner.Name = "Marie"
-	newUser.Partner.Colour = &colour
-	newUser.dbh = dbh
-	newUser.Partner.ID = partnerID
-	assert.Equal(t, user, newUser)
+	assert.Equal(t, user, userFromDB)
 
 	user, err = NewFromDB(10000, dbh)
 	assert.NotNil(t, err)
 	assert.Equal(t, err.Error(), "Unknown user")
-
-	test.DeleteAllData(dbh)
 }
 
-func TestGetOutgoings(t *testing.T) {
-
+func TestAddAndGetOutgoings(t *testing.T) {
 	dbh := config.TestDBH()
 
-	coupleID := test.InsertTestCouple(dbh)
-	newUser := &User{
-		FirstName: "Hank",
-		LastName:  "Schrader",
-		Email:     "hank@schrader.com",
-	}
-	id := test.InsertTestUser(
-		newUser.FirstName,
-		newUser.LastName,
-		newUser.Email,
-		"",
-		coupleID,
-		dbh,
-	)
+	user, err := New(randomUser(), dbh)
+	randomOutgoing := randomOutgoing()
 
-	str := "2018-01-07T15:32:12.000Z"
-	timestamp, err := time.Parse(time.RFC3339, str)
-	newOutgoing := outgoing.Outgoing{
-		Description: "Minerals", Amount: 200.00, Owed: 10.00, Spender: id,
-		Category: "General", Timestamp: &timestamp,
-	}
-	outgoingID := test.InsertTestOutgoing(
-		newOutgoing.Description,
-		newOutgoing.Amount,
-		newOutgoing.Owed,
-		newOutgoing.Spender,
-		*newOutgoing.Timestamp,
-		dbh,
-	)
-	newOutgoing.ID = &outgoingID
+	err = user.AddOutgoing(randomOutgoing)
+	assert.Nil(t, err)
 
-	user, err := NewFromDB(id, dbh)
 	outgoings, err := user.GetOutgoings()
 
-	assert.Equal(t, []outgoing.Outgoing{newOutgoing}, outgoings)
-	assert.Nil(t, err)
+	// Time of insertion is used (so hard to mock), so we just manually set
+	// it here
+	randomOutgoing.Timestamp = outgoings[0].Timestamp
 
-	test.DeleteAllData(dbh)
+	assert.Equal(t, []outgoing.Outgoing{*randomOutgoing}, outgoings)
+	assert.Nil(t, err)
 }
 
-func TestAddOutgoings(t *testing.T) {
+/***************************** Test data insertion ****************************/
 
-	dbh := config.TestDBH()
-
-	coupleID := test.InsertTestCouple(dbh)
-	newUser := &User{
-		FirstName: "Hank",
-		LastName:  "Schrader",
-		Email:     "hank@schrader.com",
+func randomUser() *User {
+	colour := "FFFFFF"
+	return &User{
+		FirstName: fake.FirstName(),
+		LastName:  fake.LastName(),
+		Email:     fake.EmailAddress(),
+		Colour:    &colour,
 	}
-	id := test.InsertTestUser(
-		newUser.FirstName,
-		newUser.LastName,
-		newUser.Email,
-		"",
-		coupleID,
-		dbh,
-	)
+}
 
-	newOutgoing := outgoing.Outgoing{
-		Description: "Fried chicken", Amount: 7.00, Owed: 3.5, Spender: id,
-		Category: "General",
+func randomOutgoing() *outgoing.Outgoing {
+	amount := math.Ceil(rand.Float64()*100) / 100
+	return &outgoing.Outgoing{
+		Description: fake.ProductName(),
+		Amount:      amount,
+		Owed:        amount / 2,
+		Category:    fake.Product(),
 	}
-
-	user, err := NewFromDB(id, dbh)
-	err = user.AddOutgoing(newOutgoing)
-
-	statement := fmt.Sprintf(
-		`SELECT description, spender_id FROM outgoings LIMIT 1`,
-	)
-
-	var description string
-	var spenderID int
-	err = dbh.QueryRow(statement).Scan(&description, &spenderID)
-
-	assert.Equal(t, description, newOutgoing.Description)
-	assert.Nil(t, err)
-
-	test.DeleteAllData(dbh)
 }

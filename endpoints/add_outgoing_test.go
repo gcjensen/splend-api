@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/gcjensen/settle-api/config"
-	"github.com/gcjensen/settle-api/test"
 	"github.com/gcjensen/settle-api/user"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
@@ -17,21 +16,7 @@ import (
 func TestAddOutgoing(t *testing.T) {
 	dbh := config.TestDBH()
 
-	coupleID := test.InsertTestCouple(dbh)
-
-	newUser := &user.User{
-		FirstName: "Hank",
-		LastName:  "Schrader",
-		Email:     "hank@schrader.com",
-	}
-	userID := test.InsertTestUser(
-		newUser.FirstName,
-		newUser.LastName,
-		newUser.Email,
-		"",
-		coupleID,
-		dbh,
-	)
+	user, _ := user.New(randomUser(), dbh)
 
 	router := httprouter.New()
 	router.POST("/user/:id/add", AddOutgoing(dbh))
@@ -42,11 +27,11 @@ func TestAddOutgoing(t *testing.T) {
 		`"owed":"10",`+
 		`"spender":"%d",`+
 		`"category":"General"`+
-		`}`, userID)
+		`}`, *user.ID)
 
 	body := []byte(bodyString)
 
-	id := strconv.Itoa(userID)
+	id := strconv.Itoa(*user.ID)
 	req, _ := http.NewRequest("POST", "/user/"+id+"/add", bytes.NewBuffer(body))
 
 	rr := httptest.NewRecorder()
@@ -64,6 +49,4 @@ func TestAddOutgoing(t *testing.T) {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expectedResponse)
 	}
-
-	test.DeleteAllData(dbh)
 }

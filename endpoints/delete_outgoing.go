@@ -18,7 +18,7 @@ func DeleteOutgoing(dbh *sql.DB) httprouter.Handle {
 
 		if id, err := strconv.Atoi(params.ByName("outgoingID")); err == nil {
 			var o *outgoing.Outgoing
-			if o, err = outgoing.New(id, dbh); err == nil {
+			if o, err = outgoing.NewFromDB(id, dbh); err == nil {
 				if err = o.Delete(); err == nil {
 					msg := "Outgoing deleted!"
 					respondWithSuccess(writer, http.StatusOK, msg)

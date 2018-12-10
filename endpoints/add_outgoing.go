@@ -24,10 +24,10 @@ func AddOutgoing(dbh *sql.DB) httprouter.Handle {
 		if err == nil {
 			decoder := json.NewDecoder(req.Body)
 			var outgoing outgoing.Outgoing
-
 			err = decoder.Decode(&outgoing)
+
 			if err == nil {
-				err = user.AddOutgoing(outgoing)
+				err = user.AddOutgoing(&outgoing)
 			}
 		}
 

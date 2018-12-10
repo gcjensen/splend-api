@@ -2,7 +2,6 @@ package endpoints
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/gcjensen/settle-api/user"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
@@ -19,14 +18,12 @@ func LogInUser(dbh *sql.DB) httprouter.Handle {
 		// Pull out into some sort of reuable param verification logic
 		id, err := strconv.Atoi(params.ByName("id"))
 		if err != nil {
-			fmt.Println(err)
 			respondWithError(err, writer)
 			return
 		}
 
 		user, err := user.NewFromDB(id, dbh)
 		if err != nil {
-			fmt.Println(err)
 			respondWithError(err, writer)
 			return
 		}
