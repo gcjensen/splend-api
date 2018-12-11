@@ -54,7 +54,10 @@ func (self *User) AddOutgoing(o *outgoing.Outgoing) error {
 }
 
 func (self *User) GetOutgoings() ([]outgoing.Outgoing, error) {
-	ids := []string{strconv.Itoa(*self.ID), "0"}
+	ids := []string{strconv.Itoa(*self.ID)}
+	if self.Partner.ID != nil {
+		ids = append(ids, strconv.Itoa(*self.Partner.ID))
+	}
 	statement := fmt.Sprintf(`
 		SELECT o.id, description, amount, owed, spender_id, c.name, settled,
 		timestamp

@@ -37,18 +37,29 @@ func TestAddAndGetOutgoings(t *testing.T) {
 	dbh := config.TestDBH()
 
 	user, err := New(randomUser(), dbh)
-	randomOutgoing := randomOutgoing()
+	randomPartner := randomUser()
+	randomPartner.CoupleID = user.CoupleID
+	partner, err := New(randomPartner, dbh)
+	user.Partner = partner
 
-	err = user.AddOutgoing(randomOutgoing)
+	randomOutgoingOne := randomOutgoing()
+	randomOutgoingTwo := randomOutgoing()
+
+	err = user.AddOutgoing(randomOutgoingOne)
+	assert.Nil(t, err)
+	err = partner.AddOutgoing(randomOutgoingTwo)
 	assert.Nil(t, err)
 
 	outgoings, err := user.GetOutgoings()
 
 	// Time of insertion is used (so hard to mock), so we just manually set
 	// it here
-	randomOutgoing.Timestamp = outgoings[0].Timestamp
+	randomOutgoingOne.Timestamp = outgoings[0].Timestamp
+	randomOutgoingTwo.Timestamp = outgoings[1].Timestamp
 
-	assert.Equal(t, []outgoing.Outgoing{*randomOutgoing}, outgoings)
+	assert.Equal(
+		t, []outgoing.Outgoing{*randomOutgoingOne, *randomOutgoingTwo}, outgoings,
+	)
 	assert.Nil(t, err)
 }
 
