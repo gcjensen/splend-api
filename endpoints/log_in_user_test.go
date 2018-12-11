@@ -48,7 +48,9 @@ func TestLogInUser(t *testing.T) {
 		`"lastName":"`+testUser.Partner.LastName+`",`+
 		`"email":"`+testUser.Partner.Email+`",`+
 		`"colour":"`+*testUser.Partner.Colour+`",`+
-		`"partner":null}`+
+		`"partner":null,`+
+		`"iconLink":null},`+
+		`"iconLink":null`+
 		`}`, *testUser.ID, *testUser.Partner.ID)
 
 	if rr.Body.String() != expected {

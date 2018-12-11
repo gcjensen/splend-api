@@ -18,6 +18,7 @@ type User struct {
 	Colour    *string `json:"colour"`
 	Partner   *User   `json:"partner"`
 	CoupleID  *int    `json:"-"`
+	IconLink  *string `json:"iconLink"`
 }
 
 func New(user *User, dbh *sql.DB) (*User, error) {
@@ -128,7 +129,7 @@ func (self *User) getInsertDetails() error {
 
 func (self *User) getUser() error {
 	statement := fmt.Sprintf(`
-        SELECT id, first_name, last_name, couple_id, colour
+        SELECT id, first_name, last_name, couple_id, colour, icon_link
         FROM users
         WHERE email="%s"`, self.Email)
 
@@ -138,6 +139,7 @@ func (self *User) getUser() error {
 		&self.LastName,
 		&self.CoupleID,
 		&self.Colour,
+		&self.IconLink,
 	)
 
 	if err != nil {
@@ -158,7 +160,7 @@ func (self *User) getPartner() error {
 	}
 
 	statement := fmt.Sprintf(`
-        SELECT id, first_name, last_name, email, colour, couple_id
+        SELECT id, first_name, last_name, email, colour, couple_id, icon_link
 		FROM users
 		WHERE couple_id = %d AND id != %d`,
 		*self.CoupleID, *self.ID)
@@ -171,6 +173,7 @@ func (self *User) getPartner() error {
 		&partner.Email,
 		&partner.Colour,
 		&partner.CoupleID,
+		&partner.IconLink,
 	)
 	self.Partner = partner
 
