@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/gcjensen/splend-api/config"
 	"github.com/gcjensen/splend-api/user"
@@ -11,7 +12,7 @@ import (
 	"testing"
 )
 
-func TestSettleOutgoing(t *testing.T) {
+func TestUpdateOutgoing(t *testing.T) {
 	dbh := config.TestDBH()
 
 	user, _ := user.New(randomUser(), dbh)
@@ -20,13 +21,22 @@ func TestSettleOutgoing(t *testing.T) {
 	outgoing := outgoings[0]
 
 	router := httprouter.New()
-	router.POST(
-		"/outgoing/settle/:outgoingID/:shouldSettle",
-		SettleOutgoing(dbh),
-	)
+	router.POST("/outgoing/update/:outgoingID", UpdateOutgoing(dbh))
+
+	bodyString := fmt.Sprintf(`{`+
+		`"description":"Groceries",`+
+		`"amount":"60",`+
+		`"owed":"30",`+
+		`"spender":"%d",`+
+		`"category":"General"`+
+		`}`, *user.ID)
+
+	body := []byte(bodyString)
 
 	req, _ := http.NewRequest(
-		"POST", fmt.Sprintf("/outgoing/settle/%d/1", *outgoing.ID), nil,
+		"POST",
+		fmt.Sprintf("/outgoing/update/%d", *outgoing.ID),
+		bytes.NewBuffer(body),
 	)
 	rr := httptest.NewRecorder()
 
@@ -38,22 +48,7 @@ func TestSettleOutgoing(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	expectedResponse := `{"message":"Outgoing settled!"}`
-	if rr.Body.String() != expectedResponse {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), expectedResponse)
-	}
-
-	// Test un-settling
-
-	req, _ = http.NewRequest(
-		"POST", fmt.Sprintf("/outgoing/settle/%d/0", *outgoing.ID), nil,
-	)
-	rr = httptest.NewRecorder()
-
-	router.ServeHTTP(rr, req)
-
-	expectedResponse = `{"message":"Outgoing un-settled!"}`
+	expectedResponse := `{"message":"Outgoing updated!"}`
 	if rr.Body.String() != expectedResponse {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expectedResponse)

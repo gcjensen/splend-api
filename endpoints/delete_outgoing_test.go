@@ -2,8 +2,8 @@ package endpoints
 
 import (
 	"fmt"
-	"github.com/gcjensen/settle-api/config"
-	"github.com/gcjensen/settle-api/user"
+	"github.com/gcjensen/splend-api/config"
+	"github.com/gcjensen/splend-api/user"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
 	"net/http"

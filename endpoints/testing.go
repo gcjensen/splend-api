@@ -1,8 +1,8 @@
 package endpoints
 
 import (
-	"github.com/gcjensen/settle-api/outgoing"
-	"github.com/gcjensen/settle-api/user"
+	"github.com/gcjensen/splend-api/outgoing"
+	"github.com/gcjensen/splend-api/user"
 	"github.com/icrowley/fake"
 )
 

@@ -2,7 +2,7 @@ package endpoints
 
 import (
 	"database/sql"
-	"github.com/gcjensen/settle-api/user"
+	"github.com/gcjensen/splend-api/user"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"

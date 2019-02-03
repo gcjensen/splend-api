@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/gcjensen/settle-api/outgoing"
+	"github.com/gcjensen/splend-api/outgoing"
 	"strconv"
 	"strings"
 )

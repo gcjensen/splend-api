@@ -62,6 +62,25 @@ func (self *Outgoing) ToggleSettled(settled bool) error {
 	return err
 }
 
+func (self *Outgoing) Update() error {
+	statement := fmt.Sprintf(
+		`SELECT id FROM categories WHERE name = "%s"`, self.Category,
+	)
+	var categoryID int
+	err := self.dbh.QueryRow(statement).Scan(&categoryID)
+
+	statement = fmt.Sprintf(`
+		UPDATE outgoings
+		SET description = "%s", amount = %f, owed = %f, category_id = %d
+		WHERE id = %d`,
+		self.Description, self.Amount, self.Owed, categoryID, *self.ID,
+	)
+
+	_, err = self.dbh.Exec(statement)
+
+	return err
+}
+
 /************************** Private Implementation ****************************/
 
 func (self *Outgoing) getInsertDetails() error {

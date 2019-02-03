@@ -1,8 +1,8 @@
 package user
 
 import (
-	"github.com/gcjensen/settle-api/config"
-	"github.com/gcjensen/settle-api/outgoing"
+	"github.com/gcjensen/splend-api/config"
+	"github.com/gcjensen/splend-api/outgoing"
 	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/assert"
 	"math"

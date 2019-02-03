@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
-	"github.com/gcjensen/settle-api/endpoints"
+	"github.com/gcjensen/splend-api/endpoints"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
 	"log"
@@ -53,14 +53,9 @@ func (server *Server) Initialise(dbh *sql.DB) {
 	server.Router.POST("/user", Auth(endpoints.LogInUser(dbh), dbh))
 	server.Router.GET("/user/:id/outgoings", Auth(endpoints.GetUserOutgoings(dbh), dbh))
 	server.Router.POST("/user/:id/add", Auth(endpoints.AddOutgoing(dbh), dbh))
-	server.Router.POST(
-		"/outgoing/settle/:outgoingID/:shouldSettle",
-		Auth(endpoints.SettleOutgoing(dbh), dbh),
-	)
-	server.Router.POST(
-		"/outgoing/delete/:outgoingID",
-		Auth(endpoints.DeleteOutgoing(dbh), dbh),
-	)
+	server.Router.POST("/outgoing/settle/:outgoingID/:shouldSettle", Auth(endpoints.SettleOutgoing(dbh), dbh))
+	server.Router.POST("/outgoing/delete/:outgoingID", Auth(endpoints.DeleteOutgoing(dbh), dbh))
+	server.Router.POST("/outgoing/update/:outgoingID", Auth(endpoints.UpdateOutgoing(dbh), dbh))
 }
 
 func (server *Server) Run(addr string) {

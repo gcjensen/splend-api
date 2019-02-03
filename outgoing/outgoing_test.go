@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/gcjensen/settle-api/config"
+	"github.com/gcjensen/splend-api/config"
 	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/assert"
 	"math"
@@ -55,6 +55,22 @@ func TestToggleSettled(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.NotNil(t, outgoing.Settled)
+}
+
+func TestUpdated(t *testing.T) {
+	dbh := config.TestDBH()
+	randomOutgoing := randomOutgoing(dbh)
+	outgoing, err := New(randomOutgoing, dbh)
+	outgoing.dbh = dbh
+
+	outgoing.Description = "Groceries"
+	err = outgoing.Update()
+
+	assert.Nil(t, err)
+
+	updatedOutgoing, err := NewFromDB(*outgoing.ID, dbh)
+
+	assert.Equal(t, updatedOutgoing.Description, "Groceries")
 }
 
 /************************** Private Implementation ****************************/

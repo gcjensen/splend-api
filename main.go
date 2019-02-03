@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/gcjensen/settle-api/config"
+	"github.com/gcjensen/splend-api/config"
 	"log"
 )
 
 func main() {
-	dbh := config.SettleDBH()
+	dbh := config.SplendDBH()
 	config := config.Load()
 
 	server := Server{}
