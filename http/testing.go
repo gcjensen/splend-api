@@ -1,14 +1,13 @@
-package endpoints
+package http
 
 import (
-	"github.com/gcjensen/splend-api/outgoing"
-	"github.com/gcjensen/splend-api/user"
+	"github.com/gcjensen/splend"
 	"github.com/icrowley/fake"
 )
 
-func randomUser() *user.User {
+func randomUser() *splend.User {
 	colour := "FFFFFF"
-	return &user.User{
+	return &splend.User{
 		FirstName: fake.FirstName(),
 		LastName:  fake.LastName(),
 		Email:     fake.EmailAddress(),
@@ -16,8 +15,8 @@ func randomUser() *user.User {
 	}
 }
 
-func randomOutgoing() *outgoing.Outgoing {
-	return &outgoing.Outgoing{
+func randomOutgoing() *splend.Outgoing {
+	return &splend.Outgoing{
 		Description: fake.ProductName(),
 		Amount:      10.22,
 		Owed:        5.11,

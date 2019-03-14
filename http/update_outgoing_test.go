@@ -1,50 +1,54 @@
-package endpoints
+package http
 
 import (
 	"bytes"
 	"fmt"
-	"github.com/gcjensen/splend-api/config"
-	"github.com/gcjensen/splend-api/user"
+	"github.com/gcjensen/splend"
+	"github.com/gcjensen/splend/config"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 )
 
-func TestAddOutgoing(t *testing.T) {
+func TestUpdateOutgoing(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, _ := user.New(randomUser(), dbh)
+	user, _ := splend.NewUser(randomUser(), dbh)
+	user.AddOutgoing(randomOutgoing())
+	outgoings, _ := user.GetOutgoings()
+	outgoing := outgoings[0]
 
 	router := httprouter.New()
-	router.POST("/user/:id/add", AddOutgoing(dbh))
+	router.POST("/outgoing/update/:outgoingID", UpdateOutgoing(dbh))
 
 	bodyString := fmt.Sprintf(`{`+
-		`"description":"Minerals",`+
-		`"amount":"200",`+
-		`"owed":"10",`+
+		`"description":"Groceries",`+
+		`"amount":"60",`+
+		`"owed":"30",`+
 		`"spender":"%d",`+
 		`"category":"General"`+
 		`}`, *user.ID)
 
 	body := []byte(bodyString)
 
-	id := strconv.Itoa(*user.ID)
-	req, _ := http.NewRequest("POST", "/user/"+id+"/add", bytes.NewBuffer(body))
-
+	req, _ := http.NewRequest(
+		"POST",
+		fmt.Sprintf("/outgoing/update/%d", *outgoing.ID),
+		bytes.NewBuffer(body),
+	)
 	rr := httptest.NewRecorder()
 
 	router.ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
-	if status := rr.Code; status != http.StatusCreated {
+	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusCreated)
+			status, http.StatusOK)
 	}
 
-	expectedResponse := `{"message":"Outgoing added!"}`
+	expectedResponse := `{"message":"Outgoing updated!"}`
 	if rr.Body.String() != expectedResponse {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expectedResponse)

@@ -1,8 +1,8 @@
-package endpoints
+package http
 
 import (
 	"database/sql"
-	"github.com/gcjensen/splend-api/user"
+	"github.com/gcjensen/splend"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
@@ -22,7 +22,7 @@ func LogInUser(dbh *sql.DB) httprouter.Handle {
 			return
 		}
 
-		user, err := user.NewFromDB(id, dbh)
+		user, err := splend.NewUserFromDB(id, dbh)
 		if err != nil {
 			respondWithError(err, writer)
 			return

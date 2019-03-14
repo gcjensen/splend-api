@@ -1,9 +1,9 @@
-package endpoints
+package http
 
 import (
 	"fmt"
-	"github.com/gcjensen/splend-api/config"
-	"github.com/gcjensen/splend-api/user"
+	"github.com/gcjensen/splend"
+	"github.com/gcjensen/splend/config"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
@@ -15,11 +15,11 @@ import (
 func TestLogInUser(t *testing.T) {
 	dbh := config.TestDBH()
 
-	tempUser, _ := user.New(randomUser(), dbh)
+	tempUser, _ := splend.NewUser(randomUser(), dbh)
 
 	randomUser := randomUser()
 	randomUser.CoupleID = tempUser.CoupleID
-	testUser, _ := user.New(randomUser, dbh)
+	testUser, _ := splend.NewUser(randomUser, dbh)
 
 	router := httprouter.New()
 	router.POST("/user/:id", LogInUser(dbh))

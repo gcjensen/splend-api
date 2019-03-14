@@ -1,10 +1,9 @@
-package user
+package splend
 
 import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/gcjensen/splend-api/outgoing"
 	"strconv"
 	"strings"
 )
@@ -21,7 +20,7 @@ type User struct {
 	IconLink  *string `json:"iconLink"`
 }
 
-func New(user *User, dbh *sql.DB) (*User, error) {
+func NewUser(user *User, dbh *sql.DB) (*User, error) {
 	self := user
 	self.dbh = dbh
 
@@ -30,7 +29,7 @@ func New(user *User, dbh *sql.DB) (*User, error) {
 	return self, err
 }
 
-func NewFromDB(id int, dbh *sql.DB) (*User, error) {
+func NewUserFromDB(id int, dbh *sql.DB) (*User, error) {
 	statement := fmt.Sprintf(`
         SELECT email
         FROM users
@@ -48,13 +47,13 @@ func NewFromDB(id int, dbh *sql.DB) (*User, error) {
 	return self, err
 }
 
-func (self *User) AddOutgoing(o *outgoing.Outgoing) error {
+func (self *User) AddOutgoing(o *Outgoing) error {
 	o.Spender = *self.ID
-	_, err := outgoing.New(o, self.dbh)
+	_, err := NewOutgoing(o, self.dbh)
 	return err
 }
 
-func (self *User) GetOutgoings() ([]outgoing.Outgoing, error) {
+func (self *User) GetOutgoings() ([]Outgoing, error) {
 	ids := []string{strconv.Itoa(*self.ID)}
 	if self.Partner.ID != nil {
 		ids = append(ids, strconv.Itoa(*self.Partner.ID))
@@ -76,10 +75,10 @@ func (self *User) GetOutgoings() ([]outgoing.Outgoing, error) {
 
 	defer rows.Close()
 
-	var outgoings []outgoing.Outgoing
+	var outgoings []Outgoing
 
 	for rows.Next() {
-		var o outgoing.Outgoing
+		var o Outgoing
 		if err := rows.Scan(&o.ID, &o.Description, &o.Amount, &o.Owed,
 			&o.Spender, &o.Category, &o.Settled, &o.Timestamp); err != nil {
 			return nil, err

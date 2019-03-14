@@ -1,6 +1,6 @@
 # Binaries for programs and plugins
 *.exe
-splend-api
+splend
 
 # Test binary, build with `go test -c`
 *.test

@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/gcjensen/splend-api/config"
+	"github.com/gcjensen/splend/config"
+	"github.com/gcjensen/splend/http"
 	"log"
 )
 
@@ -10,7 +11,7 @@ func main() {
 	dbh := config.SplendDBH()
 	config := config.Load()
 
-	server := Server{}
+	server := http.NewServer()
 	server.Initialise(dbh)
 
 	log.Printf("API available at '%s:%d'", config.Host, config.Port)

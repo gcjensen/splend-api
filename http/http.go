@@ -1,10 +1,9 @@
-package main
+package http
 
 import (
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
-	"github.com/gcjensen/splend-api/endpoints"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
 	"log"
@@ -15,6 +14,10 @@ import (
 type Server struct {
 	Router *httprouter.Router
 	dbh    *sql.DB
+}
+
+func NewServer() Server {
+	return Server{}
 }
 
 func Auth(handler httprouter.Handle, dbh *sql.DB) httprouter.Handle {
@@ -50,12 +53,12 @@ func (server *Server) Initialise(dbh *sql.DB) {
 	server.Router = httprouter.New()
 	server.dbh = dbh
 
-	server.Router.POST("/user", Auth(endpoints.LogInUser(dbh), dbh))
-	server.Router.GET("/user/:id/outgoings", Auth(endpoints.GetUserOutgoings(dbh), dbh))
-	server.Router.POST("/user/:id/add", Auth(endpoints.AddOutgoing(dbh), dbh))
-	server.Router.POST("/outgoing/settle/:outgoingID/:shouldSettle", Auth(endpoints.SettleOutgoing(dbh), dbh))
-	server.Router.POST("/outgoing/delete/:outgoingID", Auth(endpoints.DeleteOutgoing(dbh), dbh))
-	server.Router.POST("/outgoing/update/:outgoingID", Auth(endpoints.UpdateOutgoing(dbh), dbh))
+	server.Router.POST("/user", Auth(LogInUser(dbh), dbh))
+	server.Router.GET("/user/:id/outgoings", Auth(GetUserOutgoings(dbh), dbh))
+	server.Router.POST("/user/:id/add", Auth(AddOutgoing(dbh), dbh))
+	server.Router.POST("/outgoing/settle/:outgoingID/:shouldSettle", Auth(SettleOutgoing(dbh), dbh))
+	server.Router.POST("/outgoing/delete/:outgoingID", Auth(DeleteOutgoing(dbh), dbh))
+	server.Router.POST("/outgoing/update/:outgoingID", Auth(UpdateOutgoing(dbh), dbh))
 }
 
 func (server *Server) Run(addr string) {

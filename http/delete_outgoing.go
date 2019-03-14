@@ -1,9 +1,9 @@
-package endpoints
+package http
 
 import (
 	"database/sql"
 	"errors"
-	"github.com/gcjensen/splend-api/outgoing"
+	"github.com/gcjensen/splend"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
@@ -17,8 +17,8 @@ func DeleteOutgoing(dbh *sql.DB) httprouter.Handle {
 	) {
 
 		if id, err := strconv.Atoi(params.ByName("outgoingID")); err == nil {
-			var o *outgoing.Outgoing
-			if o, err = outgoing.NewFromDB(id, dbh); err == nil {
+			var o *splend.Outgoing
+			if o, err = splend.NewOutgoingFromDB(id, dbh); err == nil {
 				if err = o.Delete(); err == nil {
 					msg := "Outgoing deleted!"
 					respondWithSuccess(writer, http.StatusOK, msg)

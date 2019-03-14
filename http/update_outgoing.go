@@ -1,9 +1,9 @@
-package endpoints
+package http
 
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/gcjensen/splend-api/outgoing"
+	"github.com/gcjensen/splend"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
@@ -17,13 +17,13 @@ func UpdateOutgoing(dbh *sql.DB) httprouter.Handle {
 	) {
 
 		id, err := strconv.Atoi(params.ByName("outgoingID"))
-		outgoingToUpdate, err := outgoing.NewFromDB(id, dbh)
+		outgoingToUpdate, err := splend.NewOutgoingFromDB(id, dbh)
 
 		if err == nil {
 
 			decoder := json.NewDecoder(req.Body)
 
-			var updatedOutgoing outgoing.Outgoing
+			var updatedOutgoing splend.Outgoing
 			err = decoder.Decode(&updatedOutgoing)
 
 			if err == nil {

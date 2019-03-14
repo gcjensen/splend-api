@@ -1,8 +1,8 @@
-package endpoints
+package http
 
 import (
 	"database/sql"
-	"github.com/gcjensen/splend-api/outgoing"
+	"github.com/gcjensen/splend"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
@@ -17,7 +17,7 @@ func SettleOutgoing(dbh *sql.DB) httprouter.Handle {
 
 		// Pull out into some sort of reuable param verification logic
 		id, err := strconv.Atoi(params.ByName("outgoingID"))
-		outgoing, err := outgoing.NewFromDB(id, dbh)
+		outgoing, err := splend.NewOutgoingFromDB(id, dbh)
 
 		var shouldSettle int
 		if err == nil {

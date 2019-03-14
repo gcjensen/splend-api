@@ -1,4 +1,4 @@
-package outgoing
+package splend
 
 import (
 	"database/sql"
@@ -19,7 +19,7 @@ type Outgoing struct {
 	dbh         *sql.DB
 }
 
-func New(outgoing *Outgoing, dbh *sql.DB) (*Outgoing, error) {
+func NewOutgoing(outgoing *Outgoing, dbh *sql.DB) (*Outgoing, error) {
 	self := outgoing
 	self.dbh = dbh
 	err := self.getInsertDetails()
@@ -27,7 +27,7 @@ func New(outgoing *Outgoing, dbh *sql.DB) (*Outgoing, error) {
 	return self, err
 }
 
-func NewFromDB(id int, dbh *sql.DB) (*Outgoing, error) {
+func NewOutgoingFromDB(id int, dbh *sql.DB) (*Outgoing, error) {
 	self := &Outgoing{ID: &id}
 	self.dbh = dbh
 	err := self.getOutgoing()

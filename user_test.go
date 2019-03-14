@@ -1,34 +1,31 @@
-package user
+package splend
 
 import (
-	"github.com/gcjensen/splend-api/config"
-	"github.com/gcjensen/splend-api/outgoing"
+	"github.com/gcjensen/splend/config"
 	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/assert"
-	"math"
-	"math/rand"
 	"testing"
 )
 
 func TestNewAndNewFromDB(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, err := New(randomUser(), dbh)
+	user, err := NewUser(randomUser(), dbh)
 
 	randomPartner := randomUser()
 	randomPartner.CoupleID = user.CoupleID
-	partner, err := New(randomPartner, dbh)
+	partner, err := NewUser(randomPartner, dbh)
 	partner.dbh = nil
 
 	partner.Partner = nil
 	user.Partner = partner
 
-	userFromDB, err := NewFromDB(*user.ID, dbh)
+	userFromDB, err := NewUserFromDB(*user.ID, dbh)
 
 	assert.Nil(t, err)
 	assert.Equal(t, user, userFromDB)
 
-	user, err = NewFromDB(10000, dbh)
+	user, err = NewUserFromDB(10000, dbh)
 	assert.NotNil(t, err)
 	assert.Equal(t, err.Error(), "Unknown user")
 }
@@ -36,10 +33,10 @@ func TestNewAndNewFromDB(t *testing.T) {
 func TestAddAndGetOutgoings(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, err := New(randomUser(), dbh)
+	user, err := NewUser(randomUser(), dbh)
 	randomPartner := randomUser()
 	randomPartner.CoupleID = user.CoupleID
-	partner, err := New(randomPartner, dbh)
+	partner, err := NewUser(randomPartner, dbh)
 	user.Partner = partner
 
 	randomOutgoingOne := randomOutgoing()
@@ -58,7 +55,7 @@ func TestAddAndGetOutgoings(t *testing.T) {
 	randomOutgoingTwo.Timestamp = outgoings[1].Timestamp
 
 	assert.Equal(
-		t, []outgoing.Outgoing{*randomOutgoingOne, *randomOutgoingTwo}, outgoings,
+		t, []Outgoing{*randomOutgoingOne, *randomOutgoingTwo}, outgoings,
 	)
 	assert.Nil(t, err)
 }
@@ -72,15 +69,5 @@ func randomUser() *User {
 		LastName:  fake.LastName(),
 		Email:     fake.EmailAddress(),
 		Colour:    &colour,
-	}
-}
-
-func randomOutgoing() *outgoing.Outgoing {
-	amount := math.Ceil(rand.Float64()*100) / 100
-	return &outgoing.Outgoing{
-		Description: fake.ProductName(),
-		Amount:      amount,
-		Owed:        amount / 2,
-		Category:    fake.Product(),
 	}
 }

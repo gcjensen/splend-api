@@ -1,10 +1,9 @@
-package endpoints
+package http
 
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/gcjensen/splend-api/outgoing"
-	"github.com/gcjensen/splend-api/user"
+	"github.com/gcjensen/splend"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
@@ -19,11 +18,11 @@ func AddOutgoing(dbh *sql.DB) httprouter.Handle {
 
 		// Pull out into some sort of reuable param verification logic
 		id, err := strconv.Atoi(params.ByName("id"))
-		user, err := user.NewFromDB(id, dbh)
+		user, err := splend.NewUserFromDB(id, dbh)
 
 		if err == nil {
 			decoder := json.NewDecoder(req.Body)
-			var outgoing outgoing.Outgoing
+			var outgoing splend.Outgoing
 			err = decoder.Decode(&outgoing)
 
 			if err == nil {

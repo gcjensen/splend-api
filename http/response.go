@@ -1,4 +1,4 @@
-package endpoints
+package http
 
 import (
 	"database/sql"

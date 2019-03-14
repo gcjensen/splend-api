@@ -1,9 +1,9 @@
-package endpoints
+package http
 
 import (
 	"fmt"
-	"github.com/gcjensen/splend-api/config"
-	"github.com/gcjensen/splend-api/user"
+	"github.com/gcjensen/splend"
+	"github.com/gcjensen/splend/config"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
@@ -14,7 +14,7 @@ import (
 func TestSettleOutgoing(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, _ := user.New(randomUser(), dbh)
+	user, _ := splend.NewUser(randomUser(), dbh)
 	user.AddOutgoing(randomOutgoing())
 	outgoings, _ := user.GetOutgoings()
 	outgoing := outgoings[0]

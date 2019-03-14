@@ -1,10 +1,9 @@
-package endpoints
+package http
 
 import (
 	"database/sql"
 	"fmt"
-	"github.com/gcjensen/splend-api/outgoing"
-	"github.com/gcjensen/splend-api/user"
+	"github.com/gcjensen/splend"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
@@ -25,8 +24,8 @@ func GetUserOutgoings(dbh *sql.DB) httprouter.Handle {
 			return
 		}
 
-		user, err := user.NewFromDB(id, dbh)
-		var outgoings []outgoing.Outgoing
+		user, err := splend.NewUserFromDB(id, dbh)
+		var outgoings []splend.Outgoing
 		if err == nil {
 			outgoings, err = user.GetOutgoings()
 		}
