@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 )
 
 type User struct {
@@ -54,18 +52,20 @@ func (self *User) AddOutgoing(o *Outgoing) error {
 }
 
 func (self *User) GetOutgoings() ([]Outgoing, error) {
-	ids := []string{strconv.Itoa(*self.ID)}
+	var partnerID int
 	if self.Partner.ID != nil {
-		ids = append(ids, strconv.Itoa(*self.Partner.ID))
+		partnerID = *self.Partner.ID
 	}
 	statement := fmt.Sprintf(`
 		SELECT o.id, description, amount, owed, spender_id, c.name, settled,
 		timestamp
 		FROM outgoings o
 		JOIN categories c ON o.category_id=c.id
-		WHERE spender_id IN (%s)
+		WHERE spender_id = %d OR (spender_id = %d AND owed > 0)
 		ORDER BY o.timestamp DESC`,
-		strings.Join(ids, ","))
+		*self.ID,
+		partnerID,
+	)
 
 	rows, err := self.dbh.Query(statement)
 

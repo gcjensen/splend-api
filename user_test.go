@@ -42,9 +42,19 @@ func TestAddAndGetOutgoings(t *testing.T) {
 	randomOutgoingOne := randomOutgoing()
 	randomOutgoingTwo := randomOutgoing()
 
+	// Won't be included as it's the partner's outgoing and owed is 0
+	randomOutgoingThree := &Outgoing{
+		Description: fake.ProductName(),
+		Amount:      10,
+		Owed:        0,
+		Category:    fake.Product(),
+	}
+
 	err = user.AddOutgoing(randomOutgoingOne)
 	assert.Nil(t, err)
 	err = partner.AddOutgoing(randomOutgoingTwo)
+	assert.Nil(t, err)
+	err = partner.AddOutgoing(randomOutgoingThree)
 	assert.Nil(t, err)
 
 	outgoings, err := user.GetOutgoings()
