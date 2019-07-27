@@ -15,11 +15,11 @@ import (
 func TestLogInUser(t *testing.T) {
 	dbh := config.TestDBH()
 
-	tempUser, _ := splend.NewUser(randomUser(), dbh)
+	tempUser, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
 
 	randomUser := randomUser()
 	randomUser.CoupleID = tempUser.CoupleID
-	testUser, _ := splend.NewUser(randomUser, dbh)
+	testUser, _ := splend.NewUser(randomUser, randomSha256(), dbh)
 
 	router := httprouter.New()
 	router.POST("/user/:id", LogInUser(dbh))

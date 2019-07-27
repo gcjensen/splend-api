@@ -1,6 +1,8 @@
 package splend
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"github.com/gcjensen/splend/config"
 	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/assert"
@@ -10,11 +12,11 @@ import (
 func TestNewAndNewFromDB(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, err := NewUser(randomUser(), dbh)
+	user, err := NewUser(randomUser(), randomSha256(), dbh)
 
 	randomPartner := randomUser()
 	randomPartner.CoupleID = user.CoupleID
-	partner, err := NewUser(randomPartner, dbh)
+	partner, err := NewUser(randomPartner, randomSha256(), dbh)
 	partner.dbh = nil
 
 	partner.Partner = nil
@@ -33,10 +35,10 @@ func TestNewAndNewFromDB(t *testing.T) {
 func TestAddAndGetOutgoings(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, err := NewUser(randomUser(), dbh)
+	user, err := NewUser(randomUser(), randomSha256(), dbh)
 	randomPartner := randomUser()
 	randomPartner.CoupleID = user.CoupleID
-	partner, err := NewUser(randomPartner, dbh)
+	partner, err := NewUser(randomPartner, randomSha256(), dbh)
 	user.Partner = partner
 
 	randomOutgoingOne := randomOutgoing()
@@ -71,6 +73,13 @@ func TestAddAndGetOutgoings(t *testing.T) {
 }
 
 /***************************** Test data insertion ****************************/
+
+func randomSha256() string {
+	return fmt.Sprintf(
+		"%x",
+		sha256.Sum256([]byte(fake.Digits())),
+	)
+}
 
 func randomUser() *User {
 	colour := "FFFFFF"

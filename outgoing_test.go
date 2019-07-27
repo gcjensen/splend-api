@@ -78,8 +78,8 @@ func TestUpdated(t *testing.T) {
 func randomUserAndOutgoing(dbh *sql.DB) *Outgoing {
 	statement := fmt.Sprintf(`
 		INSERT INTO users
-		(first_name, last_name, email)
-		VALUES ("%s", "%s", "%s")`,
+		(first_name, last_name, email, sha256)
+		VALUES ("%s", "%s", "%s", "")`,
 		fake.FirstName(), fake.LastName(), fake.EmailAddress())
 
 	dbh.Exec(statement)

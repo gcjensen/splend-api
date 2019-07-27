@@ -1,6 +1,6 @@
 -- MySQL dump 10.14  Distrib 5.5.56-MariaDB, for Linux (x86_64)
 --
--- Host: localhost    Database: settle
+-- Host: localhost    Database: splend
 -- ------------------------------------------------------
 -- Server version	5.5.56-MariaDB
 
@@ -26,7 +26,7 @@ CREATE TABLE `categories` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -40,7 +40,7 @@ CREATE TABLE `couples` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `joining_date` date DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -54,17 +54,17 @@ CREATE TABLE `outgoings` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `description` varchar(255) DEFAULT NULL,
   `amount` float DEFAULT NULL,
+  `owed` float DEFAULT NULL,
   `spender_id` int(11) DEFAULT NULL,
   `category_id` int(11) DEFAULT NULL,
   `settled` datetime DEFAULT NULL,
-  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `owed` float DEFAULT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `spender_id` (`spender_id`),
   KEY `category_id` (`category_id`),
   CONSTRAINT `outgoings_ibfk_1` FOREIGN KEY (`spender_id`) REFERENCES `users` (`id`),
   CONSTRAINT `outgoings_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=284 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -84,9 +84,9 @@ CREATE TABLE `users` (
   `colour` char(6) DEFAULT NULL,
   `icon_link` text,
   PRIMARY KEY (`id`),
-  KEY `fk_couple_id` (`couple_id`),
-  CONSTRAINT `fk_couple_id` FOREIGN KEY (`couple_id`) REFERENCES `couples` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=latin1;
+  KEY `couple_id` (`couple_id`),
+  CONSTRAINT `users_ibfk_1` FOREIGN KEY (`couple_id`) REFERENCES `couples` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -98,4 +98,4 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2018-12-11  8:32:52
+-- Dump completed on 2019-07-27 13:52:09

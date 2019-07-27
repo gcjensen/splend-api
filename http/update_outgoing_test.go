@@ -15,7 +15,7 @@ import (
 func TestUpdateOutgoing(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, _ := splend.NewUser(randomUser(), dbh)
+	user, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
 	user.AddOutgoing(randomOutgoing())
 	outgoings, _ := user.GetOutgoings()
 	outgoing := outgoings[0]

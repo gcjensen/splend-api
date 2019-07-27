@@ -18,11 +18,11 @@ type User struct {
 	IconLink  *string `json:"iconLink"`
 }
 
-func NewUser(user *User, dbh *sql.DB) (*User, error) {
+func NewUser(user *User, sha256 string, dbh *sql.DB) (*User, error) {
 	self := user
 	self.dbh = dbh
 
-	err := self.getInsertDetails()
+	err := self.getInsertDetails(sha256)
 
 	return self, err
 }
@@ -103,7 +103,7 @@ func (self *User) addCouple() int {
 	return id
 }
 
-func (self *User) getInsertDetails() error {
+func (self *User) getInsertDetails(sha256 string) error {
 	err := self.getUser()
 	if err != nil {
 		if self.CoupleID == nil {
@@ -112,10 +112,10 @@ func (self *User) getInsertDetails() error {
 		}
 		statement := fmt.Sprintf(`
 			INSERT INTO users
-			(first_name, last_name, email, couple_id, colour)
-			VALUES ("%s", "%s", "%s", %d, "%s")`,
+			(first_name, last_name, email, couple_id, colour, sha256)
+			VALUES ("%s", "%s", "%s", %d, "%s", "%s")`,
 			self.FirstName, self.LastName, self.Email, *self.CoupleID,
-			*self.Colour)
+			*self.Colour, sha256)
 
 		_, err = self.dbh.Exec(statement)
 

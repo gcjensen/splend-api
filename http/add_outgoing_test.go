@@ -16,7 +16,7 @@ import (
 func TestAddOutgoing(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, _ := splend.NewUser(randomUser(), dbh)
+	user, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
 
 	router := httprouter.New()
 	router.POST("/user/:id/add", AddOutgoing(dbh))
