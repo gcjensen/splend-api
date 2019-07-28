@@ -1,6 +1,12 @@
-database: 'your-db-name'
-username: 'root'
-password: 'your-db-password'
+database:
+  username: 'root'
+  password: 'your-db-password'
+  name: 'your-db-name'
+
+test_database:
+  username: 'test'
+  password: 'your-test-db-password'
+  name: 'your-test-db-name'
 
 host: '0.0.0.0'
 port: 3000
