@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/gcjensen/splend/config"
+	"github.com/gcjensen/splend-api/config"
 	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/assert"
 	"math/rand"

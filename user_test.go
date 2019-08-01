@@ -3,7 +3,7 @@ package splend
 import (
 	"crypto/sha256"
 	"fmt"
-	"github.com/gcjensen/splend/config"
+	"github.com/gcjensen/splend-api/config"
 	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/assert"
 	"testing"

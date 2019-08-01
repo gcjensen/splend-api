@@ -3,7 +3,7 @@ package http
 import (
 	"crypto/sha256"
 	"fmt"
-	"github.com/gcjensen/splend"
+	"github.com/gcjensen/splend-api"
 	"github.com/icrowley/fake"
 	"math/rand"
 )

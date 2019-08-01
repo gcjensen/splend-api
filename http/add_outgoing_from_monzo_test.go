@@ -3,8 +3,8 @@ package http
 import (
 	"bytes"
 	"fmt"
-	"github.com/gcjensen/splend"
-	"github.com/gcjensen/splend/config"
+	"github.com/gcjensen/splend-api"
+	"github.com/gcjensen/splend-api/config"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/testify/assert"

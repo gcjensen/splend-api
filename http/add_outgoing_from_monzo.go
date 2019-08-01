@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/gcjensen/splend"
+	"github.com/gcjensen/splend-api"
 	"github.com/julienschmidt/httprouter"
 	"math"
 	"net/http"

@@ -3,7 +3,7 @@ package http
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/gcjensen/splend"
+	"github.com/gcjensen/splend-api"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
