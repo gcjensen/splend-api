@@ -10,8 +10,8 @@ import (
 type Outgoing struct {
 	ID          *int       `json:"id"`
 	Description string     `json:"description"`
-	Amount      float64    `json:"amount,string"`
-	Owed        float64    `json:"owed,string"`
+	Amount      int        `json:"amount,string"`
+	Owed        int        `json:"owed,string"`
 	Spender     int        `json:"spender,string"`
 	Category    string     `json:"category"`
 	Settled     *time.Time `json:"settled"`
@@ -71,7 +71,7 @@ func (self *Outgoing) Update() error {
 
 	statement = fmt.Sprintf(`
 		UPDATE outgoings
-		SET description = "%s", amount = %f, owed = %f, category_id = %d
+		SET description = "%s", amount = %d, owed = %d, category_id = %d
 		WHERE id = %d`,
 		self.Description, self.Amount, self.Owed, categoryID, *self.ID,
 	)
@@ -109,7 +109,7 @@ func (self *Outgoing) getInsertDetails() error {
 			INSERT INTO outgoings
 			(description, amount, owed, spender_id, category_id, settled,
 			timestamp)
-			VALUES ("%s", %f, %f, %d, %d, NULL, NOW())`,
+			VALUES ("%s", %d, %d, %d, %d, NULL, NOW())`,
 			self.Description, self.Amount, self.Owed, self.Spender, categoryID,
 		)
 

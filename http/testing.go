@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"github.com/gcjensen/splend"
 	"github.com/icrowley/fake"
+	"math/rand"
 )
 
 func randomOutgoing() *splend.Outgoing {
+	amount := rand.Intn(100)
 	return &splend.Outgoing{
 		Description: fake.ProductName(),
-		Amount:      10.22,
-		Owed:        5.11,
+		Amount:      amount,
+		Owed:        amount / 2,
 		Category:    fake.Product(),
 	}
 }

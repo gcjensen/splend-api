@@ -41,8 +41,8 @@ func TestGetUserOutgoingsEndPoint(t *testing.T) {
 	expected := fmt.Sprintf(`[{`+
 		`"id":%d,`+
 		`"description":"`+outgoing.Description+`",`+
-		`"amount":"%.2f",`+
-		`"owed":"%.2f",`+
+		`"amount":"%d",`+
+		`"owed":"%d",`+
 		`"spender":"%d",`+
 		`"category":"`+outgoing.Category+`",`+
 		`"settled":null,`+

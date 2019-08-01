@@ -53,8 +53,8 @@ DROP TABLE IF EXISTS `outgoings`;
 CREATE TABLE `outgoings` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `description` varchar(255) DEFAULT NULL,
-  `amount` float DEFAULT NULL,
-  `owed` float DEFAULT NULL,
+  `amount` int(11) DEFAULT NULL,
+  `owed` int(11) DEFAULT NULL,
   `spender_id` int(11) DEFAULT NULL,
   `category_id` int(11) DEFAULT NULL,
   `settled` datetime DEFAULT NULL,

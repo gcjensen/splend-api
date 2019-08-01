@@ -7,7 +7,6 @@ import (
 	"github.com/gcjensen/splend/config"
 	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/assert"
-	"math"
 	"math/rand"
 	"testing"
 )
@@ -87,7 +86,7 @@ func randomUserAndOutgoing(dbh *sql.DB) *Outgoing {
 	var spenderID int
 	dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&spenderID)
 
-	amount := math.Ceil(rand.Float64()*100) / 100
+	amount := rand.Intn(100)
 	return &Outgoing{
 		Description: fake.ProductName(),
 		Amount:      amount,
@@ -103,7 +102,7 @@ func randomUserAndOutgoing(dbh *sql.DB) *Outgoing {
 }
 
 func randomOutgoing() *Outgoing {
-	amount := math.Ceil(rand.Float64()*100) / 100
+	amount := rand.Intn(100)
 	return &Outgoing{
 		Description: fake.ProductName(),
 		Amount:      amount,

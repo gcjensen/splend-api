@@ -39,9 +39,9 @@ func TestAddOutgoingFromMonzo(t *testing.T) {
 	router.ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
-	if status := rr.Code; status != http.StatusCreated {
+	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusCreated)
+			status, http.StatusOK)
 	}
 
 	expectedResponse := `{"message":"Request successful"}`
@@ -53,5 +53,5 @@ func TestAddOutgoingFromMonzo(t *testing.T) {
 	outgoings, _ := user.GetOutgoings()
 
 	assert.Equal(t, outgoings[0].Description, "Aldi shop")
-	assert.Equal(t, outgoings[0].Amount, 54.32)
+	assert.Equal(t, outgoings[0].Amount, 5432)
 }

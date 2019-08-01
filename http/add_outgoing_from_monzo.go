@@ -31,8 +31,7 @@ func AddOutgoingFromMonzo(dbh *sql.DB) httprouter.Handle {
 				data := transaction["data"].(map[string]interface{})
 
 				outgoing := &splend.Outgoing{
-					// Monzo provide amounts in pence so we divide by 100
-					Amount:      math.Abs(data["amount"].(float64)) / 100,
+					Amount:      int(math.Abs(data["amount"].(float64))),
 					Category:    "Other",
 					Description: data["description"].(string),
 					Spender:     *user.ID,
