@@ -1,0 +1,46 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.9
+      - image: mysql:5.7
+        environment:
+          MYSQL_ROOT_PASSWORD: ic
+          MYSQL_DATABASE: ci_db
+          MYSQL_USER: ci
+          MYSQL_PASSWORD: ic
+
+    working_directory: /go/src/github.com/gcjensen/settle-api
+
+    steps:
+      - checkout
+      - run:
+          name: Wait for MySQL container to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z 127.0.0.1 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for MySQL && exit 1
+      - run:
+          name: Get dependencies
+          command: |
+            go get ./...
+            go get github.com/stretchr/testify/assert
+      - run:
+          name: Set up config and install mysql CLI
+          command: |
+            sudo scp .circleci/splend.yaml /etc/
+            sudo apt-get update
+            sudo apt install -y default-mysql-client
+            mysql -h 127.0.0.1 -u ci -pic ci_db < meta/schema.sql
+      - run:
+          name: Build
+          command: go build
+      - run:
+          name: Run tests
+          command: |
+            go test ./...
+
