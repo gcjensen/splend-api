@@ -65,7 +65,7 @@ func TestDBH() *sql.DB {
 func Load() *config {
 
 	// Update to point towards your config file
-	configFile, err := ioutil.ReadFile("/etc/splend.yaml")
+	configFile, err := ioutil.ReadFile("/etc/splend-api.yaml")
 
 	if err != nil {
 		log.Printf("configFile.Get err #%v", err)
