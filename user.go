@@ -3,7 +3,6 @@ package splend
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 )
 
 type User struct {
@@ -28,13 +27,10 @@ func NewUser(user *User, sha256 string, dbh *sql.DB) (*User, error) {
 }
 
 func NewUserFromDB(id int, dbh *sql.DB) (*User, error) {
-	statement := fmt.Sprintf(`
-        SELECT email
-        FROM users
-        WHERE id=%d`, id)
-
 	self := &User{dbh: dbh}
-	err := dbh.QueryRow(statement).Scan(&self.Email)
+	err := dbh.QueryRow(
+		`SELECT email FROM users WHERE id = ?`, id,
+	).Scan(&self.Email)
 
 	if err != nil {
 		return nil, errors.New("Unknown user")
@@ -56,24 +52,22 @@ func (self *User) GetOutgoings() ([]Outgoing, error) {
 	if self.Partner.ID != nil {
 		partnerID = *self.Partner.ID
 	}
-	statement := fmt.Sprintf(`
+
+	query := `
 		SELECT o.id, description, amount, owed, spender_id, c.name, settled,
 		timestamp
 		FROM outgoings o
 		JOIN categories c ON o.category_id=c.id
-		WHERE spender_id = %d OR (spender_id = %d AND owed > 0)
-		ORDER BY o.timestamp DESC`,
-		*self.ID,
-		partnerID,
-	)
+		WHERE spender_id = ? OR (spender_id = ? AND owed > 0)
+		ORDER BY o.timestamp DESC
+	`
 
-	rows, err := self.dbh.Query(statement)
+	rows, err := self.dbh.Query(query, self.ID, partnerID)
+	defer rows.Close()
 
 	if err != nil {
 		return nil, err
 	}
-
-	defer rows.Close()
 
 	var outgoings []Outgoing
 
@@ -92,11 +86,9 @@ func (self *User) GetOutgoings() ([]Outgoing, error) {
 /************************** Private Implementation ****************************/
 
 func (self *User) addCouple() int {
-	statement := fmt.Sprintf(
-		`INSERT INTO couples (joining_date) VALUES ("2018-01-01")`,
-	)
-
-	self.dbh.Exec(statement)
+	self.dbh.Exec(`
+		INSERT INTO couples (joining_date) VALUES (NOW())
+	`)
 
 	var id int
 	self.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&id)
@@ -110,14 +102,16 @@ func (self *User) getInsertDetails(sha256 string) error {
 			coupleID := self.addCouple()
 			self.CoupleID = &coupleID
 		}
-		statement := fmt.Sprintf(`
+		statement, _ := self.dbh.Prepare(`
 			INSERT INTO users
 			(first_name, last_name, email, couple_id, colour, sha256)
-			VALUES ("%s", "%s", "%s", %d, "%s", "%s")`,
-			self.FirstName, self.LastName, self.Email, *self.CoupleID,
-			*self.Colour, sha256)
+			VALUES (?, ?, ?, ?, ?, ?)
+		`)
 
-		_, err = self.dbh.Exec(statement)
+		_, err = statement.Exec(
+			self.FirstName, self.LastName, self.Email, *self.CoupleID,
+			*self.Colour, sha256,
+		)
 
 		self.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&self.ID)
 		self.getPartner()
@@ -127,12 +121,13 @@ func (self *User) getInsertDetails(sha256 string) error {
 }
 
 func (self *User) getUser() error {
-	statement := fmt.Sprintf(`
+	query := `
         SELECT id, first_name, last_name, couple_id, colour, icon_link
         FROM users
-        WHERE email="%s"`, self.Email)
+        WHERE email= ?
+	`
 
-	err := self.dbh.QueryRow(statement).Scan(
+	err := self.dbh.QueryRow(query, self.Email).Scan(
 		&self.ID,
 		&self.FirstName,
 		&self.LastName,
@@ -158,14 +153,14 @@ func (self *User) getPartner() error {
 		return errors.New("No partner")
 	}
 
-	statement := fmt.Sprintf(`
+	query := `
         SELECT id, first_name, last_name, email, colour, couple_id, icon_link
 		FROM users
-		WHERE couple_id = %d AND id != %d`,
-		*self.CoupleID, *self.ID)
+		WHERE couple_id = ? AND id != ?
+	`
 
 	partner := &User{}
-	err := self.dbh.QueryRow(statement).Scan(
+	err := self.dbh.QueryRow(query, self.CoupleID, self.ID).Scan(
 		&partner.ID,
 		&partner.FirstName,
 		&partner.LastName,

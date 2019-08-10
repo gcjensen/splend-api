@@ -3,7 +3,6 @@ package splend
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -35,25 +34,25 @@ func NewOutgoingFromDB(id int, dbh *sql.DB) (*Outgoing, error) {
 }
 
 func (self *Outgoing) Delete() error {
-	statement := fmt.Sprintf(`DELETE FROM outgoings WHERE id = %d`, *self.ID)
-	_, err := self.dbh.Exec(statement)
+	statement, _ := self.dbh.Prepare(`DELETE FROM outgoings WHERE id = ?`)
+	_, err := statement.Exec(*self.ID)
 
 	return err
 }
 
-func (self *Outgoing) ToggleSettled(settled bool) error {
-	var statement string
-	if settled {
-		statement = fmt.Sprintf(
-			`UPDATE outgoings SET settled = NOW() WHERE id=%d`, *self.ID,
-		)
+func (self *Outgoing) ToggleSettled(shouldSettle bool) error {
+	var settled sql.NullString
+	if shouldSettle {
+		settled = sql.NullString{"NOW()", true}
 	} else {
-		statement = fmt.Sprintf(
-			`UPDATE outgoings SET settled = NULL WHERE id=%d`, *self.ID,
-		)
+		settled = sql.NullString{}
 	}
 
-	_, err := self.dbh.Exec(statement)
+	statement, _ := self.dbh.Prepare(`
+		UPDATE outgoings SET settled = ? WHERE id= ?
+	`)
+
+	_, err := statement.Exec(settled, *self.ID)
 	if err != nil {
 		return err
 	}
@@ -63,20 +62,20 @@ func (self *Outgoing) ToggleSettled(settled bool) error {
 }
 
 func (self *Outgoing) Update() error {
-	statement := fmt.Sprintf(
-		`SELECT id FROM categories WHERE name = "%s"`, self.Category,
-	)
 	var categoryID int
-	err := self.dbh.QueryRow(statement).Scan(&categoryID)
+	err := self.dbh.QueryRow(
+		`SELECT id FROM categories WHERE name = ?`, self.Category,
+	).Scan(&categoryID)
 
-	statement = fmt.Sprintf(`
+	statement, _ := self.dbh.Prepare(`
 		UPDATE outgoings
-		SET description = "%s", amount = %d, owed = %d, category_id = %d
-		WHERE id = %d`,
+		SET description = ?, amount = ?, owed = ?, category_id = ?
+		WHERE id = ?
+	`)
+
+	_, err = statement.Exec(
 		self.Description, self.Amount, self.Owed, categoryID, *self.ID,
 	)
-
-	_, err = self.dbh.Exec(statement)
 
 	return err
 }
@@ -86,18 +85,17 @@ func (self *Outgoing) Update() error {
 func (self *Outgoing) getInsertDetails() error {
 	err := self.getOutgoing()
 	if err != nil {
-		statement := fmt.Sprintf(
-			`SELECT id FROM categories WHERE name = "%s"`, self.Category,
-		)
 
 		var categoryID int
-		err := self.dbh.QueryRow(statement).Scan(&categoryID)
+		err := self.dbh.QueryRow(
+			`SELECT id FROM categories WHERE name = ?`, self.Category,
+		).Scan(&categoryID)
 
 		if err != nil {
-			statement := fmt.Sprintf(`
-				INSERT INTO categories (name) VALUES ("%s")`, self.Category,
+			statement, _ := self.dbh.Prepare(
+				`INSERT INTO categories (name) VALUES (?)`,
 			)
-			_, err = self.dbh.Exec(statement)
+			_, err = statement.Exec(self.Category)
 			if err != nil {
 				return err
 			}
@@ -105,15 +103,24 @@ func (self *Outgoing) getInsertDetails() error {
 			self.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&categoryID)
 		}
 
-		statement = fmt.Sprintf(`
+		var settled sql.NullString
+		if self.Owed == 0 {
+			settled = sql.NullString{"NOW()", true}
+		} else {
+			settled = sql.NullString{}
+		}
+
+		statement, _ := self.dbh.Prepare(`
 			INSERT INTO outgoings
 			(description, amount, owed, spender_id, category_id, settled,
 			timestamp)
-			VALUES ("%s", %d, %d, %d, %d, NULL, NOW())`,
-			self.Description, self.Amount, self.Owed, self.Spender, categoryID,
-		)
+			VALUES (?, ?, ?, ?, ?, ?, NOW())
+		`)
 
-		_, err = self.dbh.Exec(statement)
+		_, err = statement.Exec(
+			self.Description, self.Amount, self.Owed, self.Spender, categoryID,
+			settled,
+		)
 
 		self.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&self.ID)
 	}
@@ -126,12 +133,12 @@ func (self *Outgoing) getOutgoing() error {
 		return errors.New("Unknown outgoing")
 	}
 
-	statement := fmt.Sprintf(`
+	query := `
 		SELECT description, amount, owed, spender_id, c.name, settled, timestamp
 		FROM outgoings o JOIN categories c ON o.category_id=c.id
-		WHERE o.id="%d"`, *self.ID)
-
-	err := self.dbh.QueryRow(statement).Scan(
+		WHERE o.id=?
+	`
+	err := self.dbh.QueryRow(query, *self.ID).Scan(
 		&self.Description,
 		&self.Amount,
 		&self.Owed,
