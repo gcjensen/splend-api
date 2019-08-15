@@ -5,16 +5,21 @@ import (
 	"errors"
 )
 
+type LinkedAccounts struct {
+	Monzo *string `json:"-"`
+}
+
 type User struct {
-	dbh       *sql.DB
-	ID        *int    `json:"id"`
-	FirstName string  `json:"firstName"`
-	LastName  string  `json:"lastName"`
-	Email     string  `json:"email"`
-	Colour    *string `json:"colour"`
-	Partner   *User   `json:"partner"`
-	CoupleID  *int    `json:"-"`
-	IconLink  *string `json:"iconLink"`
+	dbh            *sql.DB
+	ID             *int    `json:"id"`
+	FirstName      string  `json:"firstName"`
+	LastName       string  `json:"lastName"`
+	Email          string  `json:"email"`
+	Colour         *string `json:"colour"`
+	Partner        *User   `json:"partner"`
+	CoupleID       *int    `json:"-"`
+	IconLink       *string `json:"iconLink"`
+	LinkedAccounts `json:"-"`
 }
 
 func NewUser(user *User, sha256 string, dbh *sql.DB) (*User, error) {
@@ -27,7 +32,7 @@ func NewUser(user *User, sha256 string, dbh *sql.DB) (*User, error) {
 }
 
 func NewUserFromDB(id int, dbh *sql.DB) (*User, error) {
-	self := &User{dbh: dbh}
+	self := &User{dbh: dbh, LinkedAccounts: LinkedAccounts{}}
 	err := dbh.QueryRow(
 		`SELECT email FROM users WHERE id = ?`, id,
 	).Scan(&self.Email)
@@ -81,6 +86,21 @@ func (self *User) GetOutgoings() ([]Outgoing, error) {
 	}
 
 	return outgoings, err
+}
+
+func (self *User) LinkAccounts(accounts *LinkedAccounts) error {
+
+	if self.LinkedAccounts.Monzo != nil {
+		return errors.New("Monzo account already linked")
+	}
+
+	self.LinkedAccounts.Monzo = accounts.Monzo
+	statement, _ := self.dbh.Prepare(
+		`INSERT INTO linked_accounts (user_id, monzo) VALUES (?, ?)`,
+	)
+
+	_, err := statement.Exec(*self.ID, *accounts.Monzo)
+	return err
 }
 
 /************************** Private Implementation ****************************/
@@ -144,6 +164,9 @@ func (self *User) getUser() error {
 	if err != nil {
 		return err
 	}
+
+	statement := "SELECT monzo FROM linked_accounts WHERE user_id= ?"
+	self.dbh.QueryRow(statement, *self.ID).Scan(&self.LinkedAccounts.Monzo)
 
 	return err
 }

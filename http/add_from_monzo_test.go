@@ -14,25 +14,33 @@ import (
 	"testing"
 )
 
-func TestAddOutgoingFromMonzo(t *testing.T) {
+func TestAddMonzoTransaction(t *testing.T) {
 	dbh := config.TestDBH()
 
 	user, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
 
+	account := "acc_XXXXXXXXXXXXXXXXXXXXXX"
+	user.LinkAccounts(&splend.LinkedAccounts{&account})
+
 	router := httprouter.New()
-	router.POST("/user/:id/monzo-webhook", AddOutgoingFromMonzo(dbh))
+	router.POST("/user/:id/monzo-webhook", AddFromMonzo(dbh))
 
 	bodyString := fmt.Sprintf(`{` +
 		`"type":"transaction.created",` +
-		`"data":{` +
-		`"amount":-5432,` +
-		`"description":"Aldi shop"` +
+		`"data": {` +
+		`"account_id": "` + account + `",` +
+		`"amount": -5432,` +
+		`"description": "Aldi shop"` +
 		`}}`)
 
 	body := []byte(bodyString)
 
 	id := strconv.Itoa(*user.ID)
-	req, _ := http.NewRequest("POST", "/user/"+id+"/monzo-webhook", bytes.NewBuffer(body))
+	req, _ := http.NewRequest(
+		"POST",
+		"/user/"+id+"/monzo-webhook",
+		bytes.NewBuffer(body),
+	)
 
 	rr := httptest.NewRecorder()
 

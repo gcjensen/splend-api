@@ -13,7 +13,7 @@ etc.
 - Install: `go get github.com/gcjensen/splend-api`
 - `cd` into the `splend-api` directory
 - Install the dependencies: `go get ./...`
-- Create a database import the schema in `meta/schema.sql`
+- Create a database and import the schema in `meta/schema.sql`
 - Copy the `etc/splend-api.yaml` config file to `/etc/splend-api.yaml` and
   update it to reflect the details of your database created above
 - Change to the main application directory: `cd cmd/splend-api/`

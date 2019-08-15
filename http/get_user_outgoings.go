@@ -2,7 +2,6 @@ package http
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/gcjensen/splend-api"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
@@ -19,7 +18,6 @@ func GetUserOutgoings(dbh *sql.DB) httprouter.Handle {
 		// Pull out into some sort of reuable param verification logic
 		id, err := strconv.Atoi(params.ByName("id"))
 		if err != nil {
-			fmt.Println(err)
 			respondWithError(err, writer)
 			return
 		}
@@ -31,7 +29,6 @@ func GetUserOutgoings(dbh *sql.DB) httprouter.Handle {
 		}
 
 		if err != nil {
-			fmt.Println(err)
 			respondWithError(err, writer)
 			return
 		}

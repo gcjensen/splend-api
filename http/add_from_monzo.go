@@ -11,7 +11,7 @@ import (
 	"strconv"
 )
 
-func AddOutgoingFromMonzo(dbh *sql.DB) httprouter.Handle {
+func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 	return httprouter.Handle(func(
 		writer http.ResponseWriter,
 		req *http.Request,
@@ -30,13 +30,15 @@ func AddOutgoingFromMonzo(dbh *sql.DB) httprouter.Handle {
 			if transaction["type"] == "transaction.created" {
 				data := transaction["data"].(map[string]interface{})
 
-				outgoing := &splend.Outgoing{
-					Amount:      int(math.Abs(data["amount"].(float64))),
-					Category:    "Other",
-					Description: data["description"].(string),
-					Spender:     *user.ID,
+				if verifyTransaction(user, data) {
+					outgoing := &splend.Outgoing{
+						Amount:      int(math.Abs(data["amount"].(float64))),
+						Category:    "Other",
+						Description: data["description"].(string),
+						Spender:     *user.ID,
+					}
+					err = user.AddOutgoing(outgoing)
 				}
-				err = user.AddOutgoing(outgoing)
 			} else {
 				err = errors.New("Unregistered webhook type")
 				respondWithError(err, writer)
@@ -51,4 +53,15 @@ func AddOutgoingFromMonzo(dbh *sql.DB) httprouter.Handle {
 
 		respondWithSuccess(writer, http.StatusOK, "Request successful")
 	})
+}
+
+/************************** Private Implementation ****************************/
+
+/*
+ * Checks the transaction is a debit i.e. negative and that the Monzo account
+ * is linked to the provided user
+ */
+func verifyTransaction(user *splend.User, data map[string]interface{}) bool {
+	return data["account_id"] == *user.LinkedAccounts.Monzo &&
+		data["amount"].(float64) < 0
 }
