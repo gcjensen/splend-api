@@ -31,10 +31,11 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 				data := transaction["data"].(map[string]interface{})
 
 				if verifyTransaction(user, data) {
+					merchant := data["merchant"].(map[string]interface{})
 					outgoing := &splend.Outgoing{
 						Amount:      int(math.Abs(data["amount"].(float64))),
 						Category:    "Other",
-						Description: data["description"].(string),
+						Description: merchant["name"].(string),
 						Spender:     *user.ID,
 					}
 					err = user.AddOutgoing(outgoing)
@@ -62,6 +63,12 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
  * is linked to the provided user
  */
 func verifyTransaction(user *splend.User, data map[string]interface{}) bool {
-	return data["account_id"] == *user.LinkedAccounts.Monzo &&
-		data["amount"].(float64) < 0
+	if merchant, ok := data["merchant"].(map[string]interface{}); ok {
+		if _, ok := merchant["name"]; ok {
+			return data["account_id"] == *user.LinkedAccounts.Monzo &&
+				data["amount"].(float64) < 0
+		}
+	}
+
+	return false
 }

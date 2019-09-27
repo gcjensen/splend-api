@@ -30,8 +30,10 @@ func TestAddMonzoTransaction(t *testing.T) {
 		`"data": {` +
 		`"account_id": "` + account + `",` +
 		`"amount": -5432,` +
-		`"description": "Aldi shop"` +
-		`}}`)
+		`"description": "Aldi shop",` +
+		`"merchant": {` +
+		`"name": "Aldi"` +
+		`}}}`)
 
 	body := []byte(bodyString)
 
@@ -60,6 +62,6 @@ func TestAddMonzoTransaction(t *testing.T) {
 
 	outgoings, _ := user.GetOutgoings()
 
-	assert.Equal(t, outgoings[0].Description, "Aldi shop")
+	assert.Equal(t, outgoings[0].Description, "Aldi")
 	assert.Equal(t, outgoings[0].Amount, 5432)
 }
