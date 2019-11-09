@@ -1,0 +1,46 @@
+{
+  "data": {
+    "account_balance": 0,
+    "account_id": "acc_XXXXXXXXXXXXXXXXXXXXXX",
+    "amount": -1254,
+    "amount_is_pending": false,
+    "attachments": null,
+    "can_add_to_tab": true,
+    "can_be_excluded_from_breakdown": true,
+    "can_be_made_subscription": true,
+    "can_split_the_bill": true,
+    "category": "groceries",
+    "counterparty": {},
+    "created": "2019-10-12T15:50:25.787Z",
+    "currency": "GBP",
+    "description": "WAITROSE               BATH          GBR",
+    "fees": {},
+    "id": "tx_00004mq0fjhwDY9dZUfj5z",
+    "include_in_spending": true,
+    "international": null,
+    "is_load": false,
+    "labels": null,
+    "local_amount": -1254,
+    "local_currency": "GBP",
+    "merchant": {
+      "atm": false,
+      "category": "groceries",
+      "created": "2016-01-23T19:29:36.774Z",
+      "disable_feedback": false,
+      "emoji": "🍏",
+      "id": "merch_000094SSGtfl1PO85QcYi1",
+      "logo": "https://lh3.googleusercontent.com/N_A1HvbgG6aXr4byrwM6xIjJ6pLWXXrKV3jlh32zk72k7dCSvzhKA6ITVjBjaMM3YnaY6bkRnb9fEh4kTBTADmwXfF0Wg",
+      "name": "Waitrose & Partners",
+      "online": false,
+      "updated": "2018-08-20T01:25:21.358Z"
+    },
+    "notes": "",
+    "originator": false,
+    "scheme": "mastercard",
+    "settled": "",
+    "updated": "2019-10-12T15:50:26.308Z",
+    "user_id": "user_XXXXXXXXXXXXXXXXXXXXXX"
+  },
+  "type": "transaction.created"
+}
+

@@ -2,12 +2,12 @@ package http
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/gcjensen/splend-api"
 	"github.com/gcjensen/splend-api/config"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -25,17 +25,12 @@ func TestAddMonzoTransaction(t *testing.T) {
 	router := httprouter.New()
 	router.POST("/user/:id/monzo-webhook", AddFromMonzo(dbh))
 
-	bodyString := fmt.Sprintf(`{` +
-		`"type":"transaction.created",` +
-		`"data": {` +
-		`"account_id": "` + account + `",` +
-		`"amount": -5432,` +
-		`"description": "Aldi shop",` +
-		`"merchant": {` +
-		`"name": "Aldi"` +
-		`}}}`)
+	json, err := ioutil.ReadFile("../test/monzo-transaction.json")
+	if err != nil {
+		t.Errorf("Error loading test JSON file: %s", err)
+	}
 
-	body := []byte(bodyString)
+	body := []byte(json)
 
 	id := strconv.Itoa(*user.ID)
 	req, _ := http.NewRequest(
@@ -62,6 +57,6 @@ func TestAddMonzoTransaction(t *testing.T) {
 
 	outgoings, _ := user.GetOutgoings()
 
-	assert.Equal(t, outgoings[0].Description, "Aldi")
-	assert.Equal(t, outgoings[0].Amount, 5432)
+	assert.Equal(t, outgoings[0].Description, "Waitrose & Partners")
+	assert.Equal(t, outgoings[0].Amount, 1254)
 }
