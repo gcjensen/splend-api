@@ -55,6 +55,7 @@ func (server *Server) Initialise(dbh *sql.DB) {
 
 	server.Router.POST("/user", Auth(LogInUser(dbh), dbh))
 	server.Router.GET("/user/:id/outgoings", Auth(GetUserOutgoings(dbh), dbh))
+	server.Router.GET("/user/:id/breakdown/:month", Auth(GetUserMonthBreakdown(dbh), dbh))
 	server.Router.POST("/user/:id/add", Auth(AddOutgoing(dbh), dbh))
 	server.Router.POST("/user/:id/monzo-webhook", AddFromMonzo(dbh))
 	server.Router.POST("/outgoing/settle/:outgoingID/:shouldSettle", Auth(SettleOutgoing(dbh), dbh))
