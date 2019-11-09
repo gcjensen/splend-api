@@ -45,7 +45,7 @@ func TestGetUserMonthBreakdown(t *testing.T) {
 	router.GET("/user/:id/outgoings/breakdown/:month", GetUserMonthBreakdown(dbh))
 
 	month := time.Now().Format("2006-01")
-	url := fmt.Sprintf("/user/%d/outgoings/breakdown/%s?couple=1", *user.ID, month)
+	url := fmt.Sprintf("/user/%d/outgoings/breakdown/%s", *user.ID, month)
 	req, _ := http.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
 
@@ -58,8 +58,8 @@ func TestGetUserMonthBreakdown(t *testing.T) {
 	}
 
 	expected := `[` +
-		`{"category":"Groceries","total":9000},` +
-		`{"category":"Drinks","total":2000}` +
+		`{"category":"Groceries","user_total":4500,"couple_total":9000},` +
+		`{"category":"Drinks","user_total":2000,"couple_total":0}` +
 		`]`
 
 	if rr.Body.String() != expected {

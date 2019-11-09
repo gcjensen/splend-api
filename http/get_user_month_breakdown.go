@@ -23,12 +23,11 @@ func GetUserMonthBreakdown(dbh *sql.DB) httprouter.Handle {
 		}
 
 		month := params.ByName("month")
-		couple, _ := strconv.Atoi(req.URL.Query().Get("couple"))
 
 		user, err := splend.NewUserFromDB(id, dbh)
-		var breakdown []splend.CategoryTotal
+		var breakdown []splend.CategoryTotals
 		if err == nil {
-			breakdown, err = user.GetMonthBreakdown(month, couple == 1)
+			breakdown, err = user.GetMonthBreakdown(month)
 		}
 
 		if err != nil {

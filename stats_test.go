@@ -41,21 +41,12 @@ func TestGetMonthBreakdown(t *testing.T) {
 	_ = partner.AddOutgoing(groceriesAgain)
 	_ = user.AddOutgoing(beers)
 
-	breakdown, err := user.GetMonthBreakdown(time.Now().Format("2006-01"), true)
+	breakdown, err := user.GetMonthBreakdown(time.Now().Format("2006-01"))
 	assert.Nil(t, err)
 	assert.Equal(
-		t, []CategoryTotal{
-			CategoryTotal{"Groceries", 9000},
-			CategoryTotal{"Drinks", 2000},
-		}, breakdown,
-	)
-
-	breakdown, err = user.GetMonthBreakdown(time.Now().Format("2006-01"), false)
-	assert.Nil(t, err)
-	assert.Equal(
-		t, []CategoryTotal{
-			CategoryTotal{"Groceries", 4500},
-			CategoryTotal{"Drinks", 2000},
+		t, []CategoryTotals{
+			CategoryTotals{"Groceries", 4500, 9000},
+			CategoryTotals{"Drinks", 2000, 0},
 		}, breakdown,
 	)
 }
