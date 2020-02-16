@@ -38,7 +38,7 @@ func NewUserFromDB(id int, dbh *sql.DB) (*User, error) {
 	).Scan(&self.Email)
 
 	if err != nil {
-		return nil, errors.New("Unknown user")
+		return nil, errors.New("unknown user")
 	}
 
 	err = self.getUser()
@@ -49,6 +49,7 @@ func NewUserFromDB(id int, dbh *sql.DB) (*User, error) {
 func (u *User) AddOutgoing(o *Outgoing) error {
 	o.Spender = *u.ID
 	_, err := NewOutgoing(o, u.dbh)
+
 	return err
 }
 
@@ -68,11 +69,15 @@ func (u *User) GetOutgoings() ([]Outgoing, error) {
 	`
 
 	rows, err := u.dbh.Query(query, u.ID, partnerID)
-	defer rows.Close()
-
 	if err != nil {
 		return nil, err
 	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
 
 	var outgoings []Outgoing
 
@@ -82,6 +87,7 @@ func (u *User) GetOutgoings() ([]Outgoing, error) {
 			&o.Spender, &o.Category, &o.Settled, &o.Timestamp); err != nil {
 			return nil, err
 		}
+
 		outgoings = append(outgoings, o)
 	}
 
@@ -89,9 +95,8 @@ func (u *User) GetOutgoings() ([]Outgoing, error) {
 }
 
 func (u *User) LinkAccounts(accounts *LinkedAccounts) error {
-
 	if u.LinkedAccounts.Monzo != nil {
-		return errors.New("Monzo account already linked")
+		return errors.New("monzo account already linked")
 	}
 
 	u.LinkedAccounts.Monzo = accounts.Monzo
@@ -100,41 +105,63 @@ func (u *User) LinkAccounts(accounts *LinkedAccounts) error {
 	)
 
 	_, err := statement.Exec(*u.ID, *accounts.Monzo)
+
 	return err
 }
 
 /************************** Private Implementation ****************************/
 
-func (u *User) addCouple() int {
-	u.dbh.Exec(`
+func (u *User) addCouple() (*int, error) {
+	_, err := u.dbh.Exec(`
 		INSERT INTO couples (joining_date) VALUES (NOW())
 	`)
 
+	if err != nil {
+		return nil, err
+	}
+
 	var id int
-	u.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&id)
-	return id
+
+	err = u.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &id, nil
 }
 
 func (u *User) getInsertDetails(sha256 string) error {
 	err := u.getUser()
 	if err != nil {
 		if u.CoupleID == nil {
-			coupleID := u.addCouple()
-			u.CoupleID = &coupleID
+			coupleID, err := u.addCouple()
+			if err != nil {
+				return err
+			}
+
+			u.CoupleID = coupleID
 		}
+
 		statement, _ := u.dbh.Prepare(`
 			INSERT INTO users
 			(first_name, last_name, email, couple_id, colour, sha256)
 			VALUES (?, ?, ?, ?, ?, ?)
 		`)
 
-		_, err = statement.Exec(
-			u.FirstName, u.LastName, u.Email, *u.CoupleID,
-			*u.Colour, sha256,
-		)
+		_, err = statement.Exec(u.FirstName, u.LastName, u.Email, *u.CoupleID, *u.Colour, sha256)
+		if err != nil {
+			return err
+		}
 
-		u.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&u.ID)
-		u.getPartner()
+		err = u.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&u.ID)
+		if err != nil {
+			return err
+		}
+
+		err = u.getPartner()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -157,7 +184,7 @@ func (u *User) getUser() error {
 	)
 
 	if err != nil {
-		return errors.New("Unknown user")
+		return errors.New("unknown user")
 	}
 
 	err = u.getPartner()
@@ -166,14 +193,14 @@ func (u *User) getUser() error {
 	}
 
 	statement := "SELECT monzo FROM linked_accounts WHERE user_id= ?"
-	u.dbh.QueryRow(statement, *u.ID).Scan(&u.LinkedAccounts.Monzo)
+	_ = u.dbh.QueryRow(statement, *u.ID).Scan(&u.LinkedAccounts.Monzo)
 
-	return err
+	return nil
 }
 
 func (u *User) getPartner() error {
 	if u.CoupleID == nil {
-		return errors.New("No partner")
+		return errors.New("no partner")
 	}
 
 	query := `
@@ -197,5 +224,6 @@ func (u *User) getPartner() error {
 	if err != sql.ErrNoRows {
 		return err
 	}
+
 	return nil
 }

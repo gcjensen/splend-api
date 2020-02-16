@@ -2,16 +2,16 @@ package http
 
 import (
 	"bytes"
-	"github.com/gcjensen/splend-api"
-	"github.com/gcjensen/splend-api/config"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/julienschmidt/httprouter"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
+
+	"github.com/gcjensen/splend-api"
+	"github.com/gcjensen/splend-api/config"
+	"github.com/julienschmidt/httprouter"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAddMonzoTransaction(t *testing.T) {
@@ -20,7 +20,11 @@ func TestAddMonzoTransaction(t *testing.T) {
 	user, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
 
 	account := "acc_XXXXXXXXXXXXXXXXXXXXXX"
-	user.LinkAccounts(&splend.LinkedAccounts{&account})
+
+	err := user.LinkAccounts(&splend.LinkedAccounts{Monzo: &account})
+	if err != nil {
+		t.Error(err)
+	}
 
 	router := httprouter.New()
 	router.POST("/user/:id/monzo-webhook", AddFromMonzo(dbh))
@@ -30,13 +34,11 @@ func TestAddMonzoTransaction(t *testing.T) {
 		t.Errorf("Error loading test JSON file: %s", err)
 	}
 
-	body := []byte(json)
-
 	id := strconv.Itoa(*user.ID)
 	req, _ := http.NewRequest(
 		"POST",
 		"/user/"+id+"/monzo-webhook",
-		bytes.NewBuffer(body),
+		bytes.NewBuffer(json),
 	)
 
 	rr := httptest.NewRecorder()

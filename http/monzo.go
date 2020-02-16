@@ -4,14 +4,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/gcjensen/splend-api"
-	"github.com/julienschmidt/httprouter"
 	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/gcjensen/splend-api"
+	"github.com/julienschmidt/httprouter"
 )
 
 const logDir = "/var/log/splend-api/"
@@ -19,18 +20,24 @@ const logDir = "/var/log/splend-api/"
 func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		id, err := strconv.Atoi(params.ByName("id"))
+		if err != nil {
+			respondWithError(err, writer)
+			return
+		}
+
 		user, err := splend.NewUserFromDB(id, dbh)
 
 		log.Printf("Transaction received from Monzo")
 
 		if err == nil {
 			decoder := json.NewDecoder(req.Body)
+
 			var transaction map[string]interface{}
 			err = decoder.Decode(&transaction)
 
-			monzoJson, _ := json.Marshal(transaction)
+			monzoJSON, _ := json.Marshal(transaction)
 			filename := time.Now().Format("2006-01-02 15:04:05") + ".json"
-			_ = ioutil.WriteFile(logDir+filename, monzoJson, 0644)
+			_ = ioutil.WriteFile(logDir+filename, monzoJSON, 0644)
 
 			if transaction["type"] == "transaction.created" {
 				data := transaction["data"].(map[string]interface{})

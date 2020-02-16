@@ -1,19 +1,20 @@
 package splend
 
 import (
-	"github.com/gcjensen/splend-api/config"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/gcjensen/splend-api/config"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetMonthBreakdown(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, err := NewUser(randomUser(), randomSha256(), dbh)
+	user, _ := NewUser(randomUser(), randomSha256(), dbh)
 	randomPartner := randomUser()
 	randomPartner.CoupleID = user.CoupleID
-	partner, err := NewUser(randomPartner, randomSha256(), dbh)
+	partner, _ := NewUser(randomPartner, randomSha256(), dbh)
 	user.Partner = partner
 
 	groceries := &Outgoing{

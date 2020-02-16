@@ -2,10 +2,11 @@ package http
 
 import (
 	"database/sql"
-	"github.com/gcjensen/splend-api"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
+
+	"github.com/gcjensen/splend-api"
+	"github.com/julienschmidt/httprouter"
 )
 
 func GetUserMonthBreakdown(dbh *sql.DB) httprouter.Handle {
@@ -19,7 +20,9 @@ func GetUserMonthBreakdown(dbh *sql.DB) httprouter.Handle {
 		month := params.ByName("month")
 
 		user, err := splend.NewUserFromDB(id, dbh)
+
 		var breakdown []splend.CategoryTotals
+
 		if err == nil {
 			breakdown, err = user.GetMonthBreakdown(month)
 		}
@@ -42,7 +45,9 @@ func GetUserOutgoings(dbh *sql.DB) httprouter.Handle {
 		}
 
 		user, err := splend.NewUserFromDB(id, dbh)
+
 		var outgoings []splend.Outgoing
+
 		if err == nil {
 			outgoings, err = user.GetOutgoings()
 		}

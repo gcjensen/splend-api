@@ -4,11 +4,11 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 type Server struct {
@@ -22,20 +22,20 @@ func NewServer() Server {
 
 func Auth(handler httprouter.Handle, dbh *sql.DB) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-
 		token := r.Header.Get("Token")
 		// Sha256 the token and check against what we have stored for the user
 		hash := fmt.Sprintf("%x", sha256.Sum256([]byte(token)))
 
-		statement := fmt.Sprintf(
-			`SELECT id FROM users WHERE sha256="%s"`, hash,
-		)
+		statement := `SELECT id FROM users WHERE sha256=?`
+
 		var id int
-		err := dbh.QueryRow(statement).Scan(&id)
+
+		err := dbh.QueryRow(statement, hash).Scan(&id)
 
 		// Add user ID to request params to be used by handler
 		idString := strconv.Itoa(id)
-		ps = append(ps, httprouter.Param{"id", idString})
+
+		ps = append(ps, httprouter.Param{Key: "id", Value: idString})
 
 		if err == nil {
 			log.Printf("Authenticated user with ID %d\n", id)

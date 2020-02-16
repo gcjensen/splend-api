@@ -3,20 +3,21 @@ package splend
 import (
 	"crypto/sha256"
 	"fmt"
+	"testing"
+
 	"github.com/gcjensen/splend-api/config"
 	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNewAndNewFromDB(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, err := NewUser(randomUser(), randomSha256(), dbh)
+	user, _ := NewUser(randomUser(), randomSha256(), dbh)
 
 	randomPartner := randomUser()
 	randomPartner.CoupleID = user.CoupleID
-	partner, err := NewUser(randomPartner, randomSha256(), dbh)
+	partner, _ := NewUser(randomPartner, randomSha256(), dbh)
 	partner.dbh = nil
 
 	partner.Partner = nil
@@ -27,18 +28,18 @@ func TestNewAndNewFromDB(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, user, userFromDB)
 
-	user, err = NewUserFromDB(10000, dbh)
+	_, err = NewUserFromDB(10000, dbh)
 	assert.NotNil(t, err)
-	assert.Equal(t, err.Error(), "Unknown user")
+	assert.Equal(t, err.Error(), "unknown user")
 }
 
 func TestAddAndGetOutgoings(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, err := NewUser(randomUser(), randomSha256(), dbh)
+	user, _ := NewUser(randomUser(), randomSha256(), dbh)
 	randomPartner := randomUser()
 	randomPartner.CoupleID = user.CoupleID
-	partner, err := NewUser(randomPartner, randomSha256(), dbh)
+	partner, _ := NewUser(randomPartner, randomSha256(), dbh)
 	user.Partner = partner
 
 	randomOutgoingOne := randomOutgoing()
@@ -52,7 +53,7 @@ func TestAddAndGetOutgoings(t *testing.T) {
 		Category:    fake.Product(),
 	}
 
-	err = user.AddOutgoing(randomOutgoingOne)
+	err := user.AddOutgoing(randomOutgoingOne)
 	assert.Nil(t, err)
 	err = partner.AddOutgoing(randomOutgoingTwo)
 	assert.Nil(t, err)
@@ -83,6 +84,7 @@ func randomSha256() string {
 
 func randomUser() *User {
 	colour := "FFFFFF"
+
 	return &User{
 		FirstName: fake.FirstName(),
 		LastName:  fake.LastName(),

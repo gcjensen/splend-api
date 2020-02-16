@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/gcjensen/splend-api/config"
 	"github.com/gcjensen/splend-api/http"
-	"log"
 )
 
 func main() {

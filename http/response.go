@@ -8,6 +8,7 @@ import (
 
 func respondWithError(err error, writer http.ResponseWriter) {
 	var code int
+
 	var message string
 
 	switch err {
@@ -27,7 +28,12 @@ func respondWithJSON(writer http.ResponseWriter, code int, resp interface{}) {
 
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(code)
-	writer.Write(response)
+
+	_, err := writer.Write(response)
+	if err != nil {
+		respondWithError(err, writer)
+		return
+	}
 }
 
 func respondWithSuccess(writer http.ResponseWriter, code int, message string) {

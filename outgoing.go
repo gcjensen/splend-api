@@ -24,6 +24,7 @@ func NewOutgoing(outgoing *Outgoing, dbh *sql.DB) (*Outgoing, error) {
 	self.dbh = dbh
 	err := self.getInsertDetails()
 	self.dbh = nil
+
 	return self, err
 }
 
@@ -31,6 +32,7 @@ func NewOutgoingFromDB(id int, dbh *sql.DB) (*Outgoing, error) {
 	self := &Outgoing{ID: &id}
 	self.dbh = dbh
 	err := self.getOutgoing()
+
 	return self, err
 }
 
@@ -55,14 +57,19 @@ func (o *Outgoing) ToggleSettled(shouldSettle bool) error {
 	}
 
 	err = o.getInsertDetails()
+
 	return err
 }
 
 func (o *Outgoing) Update() error {
 	var categoryID int
+
 	err := o.dbh.QueryRow(
 		`SELECT id FROM categories WHERE name = ?`, o.Category,
 	).Scan(&categoryID)
+	if err != nil {
+		return err
+	}
 
 	statement, _ := o.dbh.Prepare(`
 		UPDATE outgoings
@@ -82,8 +89,8 @@ func (o *Outgoing) Update() error {
 func (o *Outgoing) getInsertDetails() error {
 	err := o.getOutgoing()
 	if err != nil {
-
 		var categoryID int
+
 		err := o.dbh.QueryRow(
 			`SELECT id FROM categories WHERE name = ?`, o.Category,
 		).Scan(&categoryID)
@@ -92,12 +99,16 @@ func (o *Outgoing) getInsertDetails() error {
 			statement, _ := o.dbh.Prepare(
 				`INSERT INTO categories (name) VALUES (?)`,
 			)
+
 			_, err = statement.Exec(o.Category)
 			if err != nil {
 				return err
 			}
 
-			o.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&categoryID)
+			err := o.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&categoryID)
+			if err != nil {
+				return err
+			}
 		}
 
 		var settled string
@@ -107,6 +118,7 @@ func (o *Outgoing) getInsertDetails() error {
 			settled = "NULL"
 		}
 
+		// #nosec - 'settled' is set above, so there's no risk of sql injection
 		statement, _ := o.dbh.Prepare(fmt.Sprintf(`
 			INSERT INTO outgoings
 			(description, amount, owed, spender_id, category_id, settled,
@@ -114,11 +126,15 @@ func (o *Outgoing) getInsertDetails() error {
 			VALUES (?, ?, ?, ?, ?, %s, NOW())
 		`, settled))
 
-		_, err = statement.Exec(
-			o.Description, o.Amount, o.Owed, o.Spender, categoryID,
-		)
+		_, err = statement.Exec(o.Description, o.Amount, o.Owed, o.Spender, categoryID)
+		if err != nil {
+			return err
+		}
 
-		o.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&o.ID)
+		err = o.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&o.ID)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -126,7 +142,7 @@ func (o *Outgoing) getInsertDetails() error {
 
 func (o *Outgoing) getOutgoing() error {
 	if o.ID == nil {
-		return errors.New("Unknown outgoing")
+		return errors.New("unknown outgoing")
 	}
 
 	query := `
@@ -145,7 +161,7 @@ func (o *Outgoing) getOutgoing() error {
 	)
 
 	if err != nil {
-		return errors.New("Unknown outgoing")
+		return errors.New("unknown outgoing")
 	}
 
 	return err

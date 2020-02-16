@@ -3,19 +3,19 @@ package splend
 import (
 	"database/sql"
 	"errors"
-	"fmt"
+	"math/rand"
+	"testing"
+
 	"github.com/gcjensen/splend-api/config"
 	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/assert"
-	"math/rand"
-	"testing"
 )
 
 func TestNew(t *testing.T) {
 	dbh := config.TestDBH()
 
 	randomOutgoing := randomUserAndOutgoing(dbh)
-	outgoing, err := NewOutgoing(randomOutgoing, dbh)
+	outgoing, _ := NewOutgoing(randomOutgoing, dbh)
 	outgoing.dbh = dbh
 
 	outgoingFromDB, err := NewOutgoingFromDB(*outgoing.ID, dbh)
@@ -24,33 +24,33 @@ func TestNew(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, outgoing, outgoingFromDB)
 
-	outgoing, err = NewOutgoingFromDB(10000, dbh)
+	_, err = NewOutgoingFromDB(10000, dbh)
 	assert.NotNil(t, err)
 }
 
 func TestDelete(t *testing.T) {
 	dbh := config.TestDBH()
 	randomOutgoing := randomUserAndOutgoing(dbh)
-	outgoing, err := NewOutgoing(randomOutgoing, dbh)
+	outgoing, _ := NewOutgoing(randomOutgoing, dbh)
 	outgoing.dbh = dbh
 
-	err = outgoing.Delete()
+	err := outgoing.Delete()
 	assert.Nil(t, err)
 
 	_, err = NewOutgoingFromDB(*outgoing.ID, dbh)
 
-	assert.Equal(t, err, errors.New("Unknown outgoing"))
+	assert.Equal(t, err, errors.New("unknown outgoing"))
 }
 
 func TestToggleSettled(t *testing.T) {
 	dbh := config.TestDBH()
 	randomOutgoing := randomUserAndOutgoing(dbh)
-	outgoing, err := NewOutgoing(randomOutgoing, dbh)
+	outgoing, _ := NewOutgoing(randomOutgoing, dbh)
 	outgoing.dbh = dbh
 
 	assert.Nil(t, outgoing.Settled)
 
-	err = outgoing.ToggleSettled(true)
+	err := outgoing.ToggleSettled(true)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, outgoing.Settled)
@@ -59,15 +59,15 @@ func TestToggleSettled(t *testing.T) {
 func TestUpdated(t *testing.T) {
 	dbh := config.TestDBH()
 	randomOutgoing := randomUserAndOutgoing(dbh)
-	outgoing, err := NewOutgoing(randomOutgoing, dbh)
+	outgoing, _ := NewOutgoing(randomOutgoing, dbh)
 	outgoing.dbh = dbh
 
 	outgoing.Description = "Groceries"
-	err = outgoing.Update()
+	err := outgoing.Update()
 
 	assert.Nil(t, err)
 
-	updatedOutgoing, err := NewOutgoingFromDB(*outgoing.ID, dbh)
+	updatedOutgoing, _ := NewOutgoingFromDB(*outgoing.ID, dbh)
 
 	assert.Equal(t, updatedOutgoing.Description, "Groceries")
 }
@@ -75,25 +75,16 @@ func TestUpdated(t *testing.T) {
 /************************** Private Implementation ****************************/
 
 func randomUserAndOutgoing(dbh *sql.DB) *Outgoing {
-	statement := fmt.Sprintf(`
+	statement, _ := dbh.Prepare(`
 		INSERT INTO users
 		(first_name, last_name, email, sha256)
-		VALUES ("%s", "%s", "%s", "")`,
-		fake.FirstName(), fake.LastName(), fake.EmailAddress())
+		VALUES (?, ?, ?, "")
+	`)
 
-	dbh.Exec(statement)
+	_, _ = statement.Exec(fake.FirstName(), fake.LastName(), fake.EmailAddress())
 
 	var spenderID int
-	dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&spenderID)
-
-	amount := rand.Intn(100)
-	return &Outgoing{
-		Description: fake.ProductName(),
-		Amount:      amount,
-		Owed:        amount / 2,
-		Category:    fake.Product(),
-		Spender:     spenderID,
-	}
+	_ = dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&spenderID)
 
 	outgoing := randomOutgoing()
 	outgoing.Spender = spenderID
@@ -103,6 +94,7 @@ func randomUserAndOutgoing(dbh *sql.DB) *Outgoing {
 
 func randomOutgoing() *Outgoing {
 	amount := rand.Intn(100)
+
 	return &Outgoing{
 		Description: fake.ProductName(),
 		Amount:      amount,

@@ -27,8 +27,7 @@ jobs:
       - run:
           name: Get dependencies
           command: |
-            go get ./...
-            go get github.com/stretchr/testify/assert
+            go get -v -t ./...
       - run:
           name: Set up config and install mysql CLI
           command: |
@@ -43,4 +42,9 @@ jobs:
           name: Run tests
           command: |
             go test ./...
+      - run:
+          name: Lint
+          command: |
+            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.1
+            $(go env GOPATH)/bin/golangci-lint run -v
 

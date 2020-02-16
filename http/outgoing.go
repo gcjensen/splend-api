@@ -4,19 +4,26 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/gcjensen/splend-api"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
+
+	"github.com/gcjensen/splend-api"
+	"github.com/julienschmidt/httprouter"
 )
 
 func AddOutgoing(dbh *sql.DB) httprouter.Handle {
 	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		id, err := strconv.Atoi(params.ByName("id"))
+		if err != nil {
+			respondWithError(err, writer)
+			return
+		}
+
 		user, err := splend.NewUserFromDB(id, dbh)
 
 		if err == nil {
 			decoder := json.NewDecoder(req.Body)
+
 			var outgoing splend.Outgoing
 			err = decoder.Decode(&outgoing)
 
@@ -37,32 +44,42 @@ func AddOutgoing(dbh *sql.DB) httprouter.Handle {
 func DeleteOutgoing(dbh *sql.DB) httprouter.Handle {
 	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		if id, err := strconv.Atoi(params.ByName("outgoingID")); err == nil {
-			var o *splend.Outgoing
-			if o, err = splend.NewOutgoingFromDB(id, dbh); err == nil {
+			if o, err := splend.NewOutgoingFromDB(id, dbh); err == nil {
 				if err = o.Delete(); err == nil {
 					msg := "Outgoing deleted!"
 					respondWithSuccess(writer, http.StatusOK, msg)
-					return
-				} else {
-					respondWithError(err, writer)
+
 					return
 				}
+
+				respondWithError(err, writer)
+
+				return
 			}
 		}
 
 		respondWithError(errors.New("outgoingID parameter expected"), writer)
-		return
 	}
 }
 
 func SettleOutgoing(dbh *sql.DB) httprouter.Handle {
 	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		id, err := strconv.Atoi(params.ByName("outgoingID"))
+		if err != nil {
+			respondWithError(err, writer)
+			return
+		}
+
 		outgoing, err := splend.NewOutgoingFromDB(id, dbh)
 
 		var shouldSettle int
 		if err == nil {
 			shouldSettle, err = strconv.Atoi(params.ByName("shouldSettle"))
+			if err != nil {
+				respondWithError(err, writer)
+				return
+			}
+
 			err = outgoing.ToggleSettled(shouldSettle != 0)
 		}
 
@@ -85,10 +102,14 @@ func SettleOutgoing(dbh *sql.DB) httprouter.Handle {
 func UpdateOutgoing(dbh *sql.DB) httprouter.Handle {
 	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		id, err := strconv.Atoi(params.ByName("outgoingID"))
+		if err != nil {
+			respondWithError(err, writer)
+			return
+		}
+
 		outgoingToUpdate, err := splend.NewOutgoingFromDB(id, dbh)
 
 		if err == nil {
-
 			decoder := json.NewDecoder(req.Body)
 
 			var updatedOutgoing splend.Outgoing

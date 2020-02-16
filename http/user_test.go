@@ -2,16 +2,16 @@ package http
 
 import (
 	"fmt"
-	"github.com/gcjensen/splend-api"
-	"github.com/gcjensen/splend-api/config"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gcjensen/splend-api"
+	"github.com/gcjensen/splend-api/config"
+	"github.com/julienschmidt/httprouter"
 )
 
 func TestGetUserMonthBreakdown(t *testing.T) {
@@ -74,7 +74,7 @@ func TestGetUserOutgoingsEndPoint(t *testing.T) {
 	dbh := config.TestDBH()
 
 	user, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
-	user.AddOutgoing(randomOutgoing())
+	_ = user.AddOutgoing(randomOutgoing())
 	outgoings, _ := user.GetOutgoings()
 	outgoing := outgoings[0]
 

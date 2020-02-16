@@ -3,13 +3,15 @@ package config
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
+
+	// Blank import is needed for the mysql driver
+	_ "github.com/go-sql-driver/mysql"
+	"gopkg.in/yaml.v2"
 )
 
-type config struct {
+type Config struct {
 	Database struct {
 		Username string `yaml:"username"`
 		Password string `yaml:"password"`
@@ -62,15 +64,16 @@ func TestDBH() *sql.DB {
 	return dbh
 }
 
-func Load() *config {
-
+func Load() *Config {
 	// Update to point towards your config file
 	configFile, err := ioutil.ReadFile("/etc/splend-api.yaml")
 
 	if err != nil {
 		log.Printf("configFile.Get err #%v", err)
 	}
-	var c *config
+
+	var c *Config
+
 	err = yaml.Unmarshal(configFile, &c)
 	if err != nil {
 		log.Fatalf("Unmarshal: %v", err)

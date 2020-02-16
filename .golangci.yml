@@ -1,0 +1,17 @@
+# golangci-lint configuration options
+# we use all default settings, unless where overidden below
+
+linters-settings:
+  funlen:
+    lines: 100
+    statements: 50
+
+linters:
+  enable-all: true
+
+issues:
+  exclude-rules:
+    # Disable magic number linter in test files
+    - path: test
+      linters:
+        - gomnd
