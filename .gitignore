@@ -10,3 +10,5 @@ splend-api
 
 # swp files
 *.swp
+
+.idea/

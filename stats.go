@@ -6,13 +6,10 @@ type CategoryTotals struct {
 	CoupleTotal int    `json:"couple_total"`
 }
 
-func (self *User) GetMonthBreakdown(
-	monthYear string,
-) ([]CategoryTotals, error) {
-
+func (u *User) GetMonthBreakdown(monthYear string, ) ([]CategoryTotals, error) {
 	var partnerID int
-	if self.Partner.ID != nil {
-		partnerID = *self.Partner.ID
+	if u.Partner.ID != nil {
+		partnerID = *u.Partner.ID
 	}
 
 	query := `
@@ -28,7 +25,7 @@ func (self *User) GetMonthBreakdown(
 		order by 2 desc;
 	`
 
-	rows, err := self.dbh.Query(query, self.ID, self.ID, partnerID, monthYear)
+	rows, err := u.dbh.Query(query, u.ID, u.ID, partnerID, monthYear)
 
 	defer rows.Close()
 

@@ -17,13 +17,7 @@ import (
 const logDir = "/var/log/splend-api/"
 
 func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
-	return httprouter.Handle(func(
-		writer http.ResponseWriter,
-		req *http.Request,
-		params httprouter.Params,
-	) {
-
-		// Pull out into some sort of reuable param verification logic
+	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		id, err := strconv.Atoi(params.ByName("id"))
 		user, err := splend.NewUserFromDB(id, dbh)
 
@@ -54,7 +48,7 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 					log.Printf("Transaction not valid. Ignoring")
 				}
 			} else {
-				err = errors.New("Unregistered webhook type")
+				err = errors.New("unregistered webhook type")
 				respondWithError(err, writer)
 				return
 			}
@@ -66,7 +60,7 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 		}
 
 		respondWithSuccess(writer, http.StatusOK, "Request successful")
-	})
+	}
 }
 
 /************************** Private Implementation ****************************/

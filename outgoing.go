@@ -3,6 +3,7 @@ package splend
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -33,48 +34,44 @@ func NewOutgoingFromDB(id int, dbh *sql.DB) (*Outgoing, error) {
 	return self, err
 }
 
-func (self *Outgoing) Delete() error {
-	statement, _ := self.dbh.Prepare(`DELETE FROM outgoings WHERE id = ?`)
-	_, err := statement.Exec(*self.ID)
+func (o *Outgoing) Delete() error {
+	statement, _ := o.dbh.Prepare(`DELETE FROM outgoings WHERE id = ?`)
+	_, err := statement.Exec(*o.ID)
 
 	return err
 }
 
-func (self *Outgoing) ToggleSettled(shouldSettle bool) error {
-	var settled sql.NullString
+func (o *Outgoing) ToggleSettled(shouldSettle bool) error {
+	var statement *sql.Stmt
 	if shouldSettle {
-		settled = sql.NullString{"NOW()", true}
+		statement, _ = o.dbh.Prepare(`UPDATE outgoings SET settled = NOW() WHERE id= ?`)
 	} else {
-		settled = sql.NullString{}
+		statement, _ = o.dbh.Prepare(`UPDATE outgoings SET settled = NULL WHERE id= ?`)
 	}
 
-	statement, _ := self.dbh.Prepare(`
-		UPDATE outgoings SET settled = ? WHERE id= ?
-	`)
-
-	_, err := statement.Exec(settled, *self.ID)
+	_, err := statement.Exec(*o.ID)
 	if err != nil {
 		return err
 	}
 
-	err = self.getInsertDetails()
+	err = o.getInsertDetails()
 	return err
 }
 
-func (self *Outgoing) Update() error {
+func (o *Outgoing) Update() error {
 	var categoryID int
-	err := self.dbh.QueryRow(
-		`SELECT id FROM categories WHERE name = ?`, self.Category,
+	err := o.dbh.QueryRow(
+		`SELECT id FROM categories WHERE name = ?`, o.Category,
 	).Scan(&categoryID)
 
-	statement, _ := self.dbh.Prepare(`
+	statement, _ := o.dbh.Prepare(`
 		UPDATE outgoings
 		SET description = ?, amount = ?, owed = ?, category_id = ?
 		WHERE id = ?
 	`)
 
 	_, err = statement.Exec(
-		self.Description, self.Amount, self.Owed, categoryID, *self.ID,
+		o.Description, o.Amount, o.Owed, categoryID, *o.ID,
 	)
 
 	return err
@@ -82,54 +79,53 @@ func (self *Outgoing) Update() error {
 
 /************************** Private Implementation ****************************/
 
-func (self *Outgoing) getInsertDetails() error {
-	err := self.getOutgoing()
+func (o *Outgoing) getInsertDetails() error {
+	err := o.getOutgoing()
 	if err != nil {
 
 		var categoryID int
-		err := self.dbh.QueryRow(
-			`SELECT id FROM categories WHERE name = ?`, self.Category,
+		err := o.dbh.QueryRow(
+			`SELECT id FROM categories WHERE name = ?`, o.Category,
 		).Scan(&categoryID)
 
 		if err != nil {
-			statement, _ := self.dbh.Prepare(
+			statement, _ := o.dbh.Prepare(
 				`INSERT INTO categories (name) VALUES (?)`,
 			)
-			_, err = statement.Exec(self.Category)
+			_, err = statement.Exec(o.Category)
 			if err != nil {
 				return err
 			}
 
-			self.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&categoryID)
+			o.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&categoryID)
 		}
 
-		var settled sql.NullString
-		if self.Owed == 0 {
-			settled = sql.NullString{"NOW()", true}
+		var settled string
+		if o.Owed == 0 {
+			settled = "NOW()"
 		} else {
-			settled = sql.NullString{}
+			settled = "NULL"
 		}
 
-		statement, _ := self.dbh.Prepare(`
+		statement, _ := o.dbh.Prepare(fmt.Sprintf(`
 			INSERT INTO outgoings
 			(description, amount, owed, spender_id, category_id, settled,
 			timestamp)
-			VALUES (?, ?, ?, ?, ?, ?, NOW())
-		`)
+			VALUES (?, ?, ?, ?, ?, %s, NOW())
+		`, settled))
 
 		_, err = statement.Exec(
-			self.Description, self.Amount, self.Owed, self.Spender, categoryID,
-			settled,
+			o.Description, o.Amount, o.Owed, o.Spender, categoryID,
 		)
 
-		self.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&self.ID)
+		o.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&o.ID)
 	}
 
 	return nil
 }
 
-func (self *Outgoing) getOutgoing() error {
-	if self.ID == nil {
+func (o *Outgoing) getOutgoing() error {
+	if o.ID == nil {
 		return errors.New("Unknown outgoing")
 	}
 
@@ -138,14 +134,14 @@ func (self *Outgoing) getOutgoing() error {
 		FROM outgoings o JOIN categories c ON o.category_id=c.id
 		WHERE o.id=?
 	`
-	err := self.dbh.QueryRow(query, *self.ID).Scan(
-		&self.Description,
-		&self.Amount,
-		&self.Owed,
-		&self.Spender,
-		&self.Category,
-		&self.Settled,
-		&self.Timestamp,
+	err := o.dbh.QueryRow(query, *o.ID).Scan(
+		&o.Description,
+		&o.Amount,
+		&o.Owed,
+		&o.Spender,
+		&o.Category,
+		&o.Settled,
+		&o.Timestamp,
 	)
 
 	if err != nil {

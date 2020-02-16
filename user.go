@@ -46,16 +46,16 @@ func NewUserFromDB(id int, dbh *sql.DB) (*User, error) {
 	return self, err
 }
 
-func (self *User) AddOutgoing(o *Outgoing) error {
-	o.Spender = *self.ID
-	_, err := NewOutgoing(o, self.dbh)
+func (u *User) AddOutgoing(o *Outgoing) error {
+	o.Spender = *u.ID
+	_, err := NewOutgoing(o, u.dbh)
 	return err
 }
 
-func (self *User) GetOutgoings() ([]Outgoing, error) {
+func (u *User) GetOutgoings() ([]Outgoing, error) {
 	var partnerID int
-	if self.Partner.ID != nil {
-		partnerID = *self.Partner.ID
+	if u.Partner.ID != nil {
+		partnerID = *u.Partner.ID
 	}
 
 	query := `
@@ -67,7 +67,7 @@ func (self *User) GetOutgoings() ([]Outgoing, error) {
 		ORDER BY o.timestamp DESC
 	`
 
-	rows, err := self.dbh.Query(query, self.ID, partnerID)
+	rows, err := u.dbh.Query(query, u.ID, partnerID)
 	defer rows.Close()
 
 	if err != nil {
@@ -88,91 +88,91 @@ func (self *User) GetOutgoings() ([]Outgoing, error) {
 	return outgoings, err
 }
 
-func (self *User) LinkAccounts(accounts *LinkedAccounts) error {
+func (u *User) LinkAccounts(accounts *LinkedAccounts) error {
 
-	if self.LinkedAccounts.Monzo != nil {
+	if u.LinkedAccounts.Monzo != nil {
 		return errors.New("Monzo account already linked")
 	}
 
-	self.LinkedAccounts.Monzo = accounts.Monzo
-	statement, _ := self.dbh.Prepare(
+	u.LinkedAccounts.Monzo = accounts.Monzo
+	statement, _ := u.dbh.Prepare(
 		`INSERT INTO linked_accounts (user_id, monzo) VALUES (?, ?)`,
 	)
 
-	_, err := statement.Exec(*self.ID, *accounts.Monzo)
+	_, err := statement.Exec(*u.ID, *accounts.Monzo)
 	return err
 }
 
 /************************** Private Implementation ****************************/
 
-func (self *User) addCouple() int {
-	self.dbh.Exec(`
+func (u *User) addCouple() int {
+	u.dbh.Exec(`
 		INSERT INTO couples (joining_date) VALUES (NOW())
 	`)
 
 	var id int
-	self.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&id)
+	u.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&id)
 	return id
 }
 
-func (self *User) getInsertDetails(sha256 string) error {
-	err := self.getUser()
+func (u *User) getInsertDetails(sha256 string) error {
+	err := u.getUser()
 	if err != nil {
-		if self.CoupleID == nil {
-			coupleID := self.addCouple()
-			self.CoupleID = &coupleID
+		if u.CoupleID == nil {
+			coupleID := u.addCouple()
+			u.CoupleID = &coupleID
 		}
-		statement, _ := self.dbh.Prepare(`
+		statement, _ := u.dbh.Prepare(`
 			INSERT INTO users
 			(first_name, last_name, email, couple_id, colour, sha256)
 			VALUES (?, ?, ?, ?, ?, ?)
 		`)
 
 		_, err = statement.Exec(
-			self.FirstName, self.LastName, self.Email, *self.CoupleID,
-			*self.Colour, sha256,
+			u.FirstName, u.LastName, u.Email, *u.CoupleID,
+			*u.Colour, sha256,
 		)
 
-		self.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&self.ID)
-		self.getPartner()
+		u.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&u.ID)
+		u.getPartner()
 	}
 
 	return nil
 }
 
-func (self *User) getUser() error {
+func (u *User) getUser() error {
 	query := `
         SELECT id, first_name, last_name, couple_id, colour, icon_link
         FROM users
         WHERE email= ?
 	`
 
-	err := self.dbh.QueryRow(query, self.Email).Scan(
-		&self.ID,
-		&self.FirstName,
-		&self.LastName,
-		&self.CoupleID,
-		&self.Colour,
-		&self.IconLink,
+	err := u.dbh.QueryRow(query, u.Email).Scan(
+		&u.ID,
+		&u.FirstName,
+		&u.LastName,
+		&u.CoupleID,
+		&u.Colour,
+		&u.IconLink,
 	)
 
 	if err != nil {
 		return errors.New("Unknown user")
 	}
 
-	err = self.getPartner()
+	err = u.getPartner()
 	if err != nil {
 		return err
 	}
 
 	statement := "SELECT monzo FROM linked_accounts WHERE user_id= ?"
-	self.dbh.QueryRow(statement, *self.ID).Scan(&self.LinkedAccounts.Monzo)
+	u.dbh.QueryRow(statement, *u.ID).Scan(&u.LinkedAccounts.Monzo)
 
 	return err
 }
 
-func (self *User) getPartner() error {
-	if self.CoupleID == nil {
+func (u *User) getPartner() error {
+	if u.CoupleID == nil {
 		return errors.New("No partner")
 	}
 
@@ -183,7 +183,7 @@ func (self *User) getPartner() error {
 	`
 
 	partner := &User{}
-	err := self.dbh.QueryRow(query, self.CoupleID, self.ID).Scan(
+	err := u.dbh.QueryRow(query, u.CoupleID, u.ID).Scan(
 		&partner.ID,
 		&partner.FirstName,
 		&partner.LastName,
@@ -192,7 +192,7 @@ func (self *User) getPartner() error {
 		&partner.CoupleID,
 		&partner.IconLink,
 	)
-	self.Partner = partner
+	u.Partner = partner
 
 	if err != sql.ErrNoRows {
 		return err

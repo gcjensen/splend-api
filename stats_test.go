@@ -45,8 +45,8 @@ func TestGetMonthBreakdown(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(
 		t, []CategoryTotals{
-			CategoryTotals{"Groceries", 4500, 9000},
-			CategoryTotals{"Drinks", 2000, 0},
+			{"Groceries", 4500, 9000},
+			{"Drinks", 2000, 0},
 		}, breakdown,
 	)
 }
