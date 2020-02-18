@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.9
+      - image: circleci/golang:1.13.5
       - image: mariadb:5.5.56
         environment:
           MYSQL_ROOT_PASSWORD: ic
