@@ -5,21 +5,21 @@ import (
 	"errors"
 )
 
-type LinkedAccounts struct {
-	Monzo *string `json:"-"`
+type MonzoAccount struct {
+	ID *string `json:"-"`
 }
 
 type User struct {
-	dbh            *sql.DB
-	ID             *int    `json:"id"`
-	FirstName      string  `json:"firstName"`
-	LastName       string  `json:"lastName"`
-	Email          string  `json:"email"`
-	Colour         *string `json:"colour"`
-	Partner        *User   `json:"partner"`
-	CoupleID       *int    `json:"-"`
-	IconLink       *string `json:"iconLink"`
-	LinkedAccounts `json:"-"`
+	dbh          *sql.DB
+	ID           *int         `json:"id"`
+	FirstName    string       `json:"firstName"`
+	LastName     string       `json:"lastName"`
+	Email        string       `json:"email"`
+	Colour       *string      `json:"colour"`
+	Partner      *User        `json:"partner"`
+	CoupleID     *int         `json:"-"`
+	IconLink     *string      `json:"iconLink"`
+	MonzoAccount MonzoAccount `json:"-"`
 }
 
 func NewUser(user *User, sha256 string, dbh *sql.DB) (*User, error) {
@@ -32,7 +32,7 @@ func NewUser(user *User, sha256 string, dbh *sql.DB) (*User, error) {
 }
 
 func NewUserFromDB(id int, dbh *sql.DB) (*User, error) {
-	self := &User{dbh: dbh, LinkedAccounts: LinkedAccounts{}}
+	self := &User{dbh: dbh, MonzoAccount: MonzoAccount{}}
 	err := dbh.QueryRow(
 		`SELECT email FROM users WHERE id = ?`, id,
 	).Scan(&self.Email)
@@ -94,22 +94,20 @@ func (u *User) GetOutgoings() ([]Outgoing, error) {
 	return outgoings, err
 }
 
-func (u *User) LinkAccounts(accounts *LinkedAccounts) error {
-	if u.LinkedAccounts.Monzo != nil {
+func (u *User) LinkMonzo(account *MonzoAccount) error {
+	if u.MonzoAccount.ID != nil {
 		return errors.New("monzo account already linked")
 	}
 
-	u.LinkedAccounts.Monzo = accounts.Monzo
+	u.MonzoAccount.ID = account.ID
 	statement, _ := u.dbh.Prepare(
-		`INSERT INTO linked_accounts (user_id, monzo) VALUES (?, ?)`,
+		`INSERT INTO monzo_accounts (user_id, account_id) VALUES (?, ?)`,
 	)
 
-	_, err := statement.Exec(*u.ID, *accounts.Monzo)
+	_, err := statement.Exec(*u.ID, *account.ID)
 
 	return err
 }
-
-/************************** Private Implementation ****************************/
 
 func (u *User) addCouple() (*int, error) {
 	_, err := u.dbh.Exec(`
@@ -192,8 +190,8 @@ func (u *User) getUser() error {
 		return err
 	}
 
-	statement := "SELECT monzo FROM linked_accounts WHERE user_id= ?"
-	_ = u.dbh.QueryRow(statement, *u.ID).Scan(&u.LinkedAccounts.Monzo)
+	statement := "SELECT account_id FROM monzo_accounts WHERE user_id= ?"
+	_ = u.dbh.QueryRow(statement, *u.ID).Scan(&u.MonzoAccount.ID)
 
 	return nil
 }

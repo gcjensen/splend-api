@@ -84,8 +84,6 @@ func (o *Outgoing) Update() error {
 	return err
 }
 
-/************************** Private Implementation ****************************/
-
 func (o *Outgoing) getInsertDetails() error {
 	err := o.getOutgoing()
 	if err != nil {

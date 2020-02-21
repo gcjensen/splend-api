@@ -21,7 +21,7 @@ func TestAddMonzoTransaction(t *testing.T) {
 
 	account := "acc_XXXXXXXXXXXXXXXXXXXXXX"
 
-	err := user.LinkAccounts(&splend.LinkedAccounts{Monzo: &account})
+	err := user.LinkMonzo(&splend.MonzoAccount{ID: &account})
 	if err != nil {
 		t.Error(err)
 	}

@@ -70,8 +70,6 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 	}
 }
 
-/************************** Private Implementation ****************************/
-
 /*
  * Checks the transaction is a debit i.e. negative and that the Monzo account
  * is linked to the provided user
@@ -79,7 +77,7 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 func verifyTransaction(user *splend.User, data map[string]interface{}) bool {
 	if merchant, ok := data["merchant"].(map[string]interface{}); ok {
 		if _, ok := merchant["name"]; ok {
-			return data["account_id"] == *user.LinkedAccounts.Monzo &&
+			return data["account_id"] == *user.MonzoAccount.ID &&
 				data["amount"].(float64) < 0
 		}
 	}
