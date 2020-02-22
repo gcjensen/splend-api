@@ -2,9 +2,11 @@ package splend
 
 import (
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/gcjensen/amex"
 	"github.com/gcjensen/splend-api/config"
 	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/assert"
@@ -71,6 +73,29 @@ func TestAddAndGetOutgoings(t *testing.T) {
 		t, []Outgoing{*randomOutgoingOne, *randomOutgoingTwo}, outgoings,
 	)
 	assert.Nil(t, err)
+}
+
+func TestAddAmexTransaction(t *testing.T) {
+	dbh := config.TestDBH()
+
+	user, _ := NewUser(randomUser(), randomSha256(), dbh)
+
+	amexTX := amex.Transaction{
+		Amount:      1400,
+		Date:        "01-01-20",
+		Description: "Beers",
+		ID:          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+	}
+
+	err := user.AddAmexTransaction(amexTX)
+	assert.Nil(t, err)
+
+	outgoings, _ := user.GetOutgoings()
+	assert.Equal(t, amexTX.Amount, outgoings[0].Amount)
+	assert.Equal(t, amexTX.Description, outgoings[0].Description)
+
+	err = user.AddAmexTransaction(amexTX)
+	assert.True(t, errors.Is(err, ErrAlreadyExists))
 }
 
 /***************************** Test data insertion ****************************/

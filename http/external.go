@@ -11,11 +11,53 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gcjensen/amex"
 	"github.com/gcjensen/splend-api"
 	"github.com/julienschmidt/httprouter"
 )
 
 const logDir = "/var/log/splend-api/"
+
+func AddFromAmex(dbh *sql.DB) httprouter.Handle {
+	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		id, err := strconv.Atoi(params.ByName("id"))
+		if err != nil {
+			respondWithError(err, writer)
+			return
+		}
+
+		user, err := splend.NewUserFromDB(id, dbh)
+		if err != nil {
+			respondWithError(err, writer)
+			return
+		}
+
+		decoder := json.NewDecoder(req.Body)
+
+		var transaction amex.Transaction
+		err = decoder.Decode(&transaction)
+
+		if err != nil {
+			respondWithError(err, writer)
+			return
+		}
+
+		amexJSON, _ := json.Marshal(transaction)
+		logTransaction("amex", amexJSON)
+
+		err = user.AddAmexTransaction(transaction)
+		if err != nil {
+			log.Println(err.Error())
+			respondWithError(err, writer)
+
+			return
+		}
+
+		log.Printf("Transaction added from Amex")
+
+		respondWithSuccess(writer, http.StatusOK, "Amex transaction added")
+	}
+}
 
 func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
@@ -36,8 +78,7 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 			err = decoder.Decode(&transaction)
 
 			monzoJSON, _ := json.Marshal(transaction)
-			filename := time.Now().Format("2006-01-02 15:04:05") + ".json"
-			_ = ioutil.WriteFile(logDir+filename, monzoJSON, 0644)
+			logTransaction("monzo", monzoJSON)
 
 			if transaction["type"] == "transaction.created" {
 				data := transaction["data"].(map[string]interface{})
@@ -68,6 +109,11 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 
 		respondWithSuccess(writer, http.StatusOK, "Request successful")
 	}
+}
+
+func logTransaction(t string, txJSON []byte) {
+	filename := t + "-" + time.Now().Format("2006-01-02 15:04:05") + ".json"
+	_ = ioutil.WriteFile(logDir+filename, txJSON, 0644)
 }
 
 /*

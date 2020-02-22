@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+
+	"github.com/gcjensen/splend-api"
 )
 
 func respondWithError(err error, writer http.ResponseWriter) {
@@ -15,6 +17,9 @@ func respondWithError(err error, writer http.ResponseWriter) {
 	case sql.ErrNoRows:
 		code = http.StatusNotFound
 		message = "User not found"
+	case splend.ErrAlreadyExists:
+		code = http.StatusBadRequest
+		message = err.Error()
 	default:
 		code = http.StatusInternalServerError
 		message = err.Error()

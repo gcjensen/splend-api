@@ -3,6 +3,8 @@ package splend
 import (
 	"database/sql"
 	"errors"
+
+	"github.com/gcjensen/amex"
 )
 
 type MonzoAccount struct {
@@ -21,6 +23,8 @@ type User struct {
 	IconLink     *string      `json:"iconLink"`
 	MonzoAccount MonzoAccount `json:"-"`
 }
+
+var ErrAlreadyExists = errors.New("amex transaction already exists")
 
 func NewUser(user *User, sha256 string, dbh *sql.DB) (*User, error) {
 	self := user
@@ -44,6 +48,38 @@ func NewUserFromDB(id int, dbh *sql.DB) (*User, error) {
 	err = self.getUser()
 
 	return self, err
+}
+
+func (u *User) AddAmexTransaction(tx amex.Transaction) error {
+	err := u.isAmexTransactionNew(tx)
+	if err != sql.ErrNoRows {
+		return ErrAlreadyExists
+	}
+
+	err = u.AddOutgoing(&Outgoing{
+		Amount:      tx.Amount,
+		Category:    "Other",
+		Description: tx.Description,
+		Spender:     *u.ID,
+	})
+	if err != nil {
+		return err
+	}
+
+	var outgoingID int
+	err = u.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&outgoingID)
+
+	if err != nil {
+		return err
+	}
+
+	statement, _ := u.dbh.Prepare(
+		`INSERT INTO amex_transactions (amex_id, outgoing_id) VALUES (?, ?)`,
+	)
+
+	_, err = statement.Exec(tx.ID, outgoingID)
+
+	return err
 }
 
 func (u *User) AddOutgoing(o *Outgoing) error {
@@ -224,4 +260,16 @@ func (u *User) getPartner() error {
 	}
 
 	return nil
+}
+
+func (u *User) isAmexTransactionNew(tx amex.Transaction) error {
+	query := `
+		SELECT * FROM amex_transactions a
+		JOIN outgoings o ON a.outgoing_id=o.id
+		WHERE a.amex_id = ? AND o.spender_id = ?
+	`
+
+	err := u.dbh.QueryRow(query, tx.ID, u.ID).Scan()
+
+	return err
 }
