@@ -13,6 +13,8 @@ github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/gcjensen/amex v0.0.0-20200211184031-012bba13e2a1 h1:HXwM8Nno39chjFjnvVvV8HmqdBasZAVQcspctDIwx90=
 github.com/gcjensen/amex v0.0.0-20200211184031-012bba13e2a1/go.mod h1:K/+kMmYq02dBRIhUDhN7bf8FIGJZTn4CSSp4//jc1Jo=
+github.com/gcjensen/amex v0.0.0-20200223140202-053465002b71 h1:980VaIUymMrtr2HjcAdYuEK/JQfrZH9MsW/Yxi9A+b4=
+github.com/gcjensen/amex v0.0.0-20200223140202-053465002b71/go.mod h1:K/+kMmYq02dBRIhUDhN7bf8FIGJZTn4CSSp4//jc1Jo=
 github.com/go-sql-driver/mysql v1.5.0 h1:ozyZYNQW3x3HtqT1jira07DN2PArx2v7/mN66gGcHOs=
 github.com/go-sql-driver/mysql v1.5.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=
 github.com/gobwas/httphead v0.0.0-20180130184737-2c6c146eadee h1:s+21KNqlpePfkah2I+gwHF8xmJWRjooY+5248k6m4A0=
