@@ -16,6 +16,24 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `amex_transactions`
+--
+
+DROP TABLE IF EXISTS `amex_transactions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `amex_transactions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `amex_id` char(32) NOT NULL,
+  `outgoing_id` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `amex_id` (`amex_id`),
+  KEY `outgoing_id` (`outgoing_id`),
+  CONSTRAINT `amex_transactions_ibfk` FOREIGN KEY (`outgoing_id`) REFERENCES `outgoings` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `categories`
 --
 
@@ -114,4 +132,4 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-02-21 19:31:31
+-- Dump completed on 2020-02-23 14:48:19
