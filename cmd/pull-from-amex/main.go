@@ -25,6 +25,7 @@ func main() {
 	userID := os.Getenv("ID")
 	amexUserID := os.Getenv("USER_ID")
 	amexPassword := os.Getenv("PASSWORD")
+	token := os.Getenv("TOKEN")
 
 	log.Println("Fetching pending transactions from Amex")
 
@@ -60,14 +61,14 @@ func main() {
 		inc := 1 // Linter doesn't allow magic numbers
 		wg.Add(inc)
 
-		go postToSplend(&wg, httpClient, apiURL, tx)
+		go postToSplend(&wg, httpClient, apiURL, token, tx)
 	}
 
 	wg.Wait()
 	log.Println("Done.")
 }
 
-func postToSplend(wg *sync.WaitGroup, cl http.Client, url string, tx *amex.Transaction) {
+func postToSplend(wg *sync.WaitGroup, cl http.Client, url, token string, tx *amex.Transaction) {
 	defer wg.Done()
 
 	txJSON, err := json.Marshal(tx)
@@ -75,7 +76,15 @@ func postToSplend(wg *sync.WaitGroup, cl http.Client, url string, tx *amex.Trans
 		log.Fatal(err)
 	}
 
-	resp, err := cl.Post(url, "application/json", bytes.NewBuffer(txJSON))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(txJSON))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Token", token)
+
+	resp, err := cl.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}
