@@ -39,7 +39,25 @@ func TestDelete(t *testing.T) {
 
 	_, err = NewOutgoingFromDB(*outgoing.ID, dbh)
 
-	assert.Equal(t, err, errors.New("unknown outgoing"))
+	assert.True(t, errors.Is(err, ErrOutgoingUnknown))
+
+	// Make sure we can also delete outgoings that exist in amex_transactions
+	outgoing, _ = NewOutgoing(randomUserAndOutgoing(dbh), dbh)
+	outgoing.dbh = dbh
+
+	statement, _ := dbh.Prepare(`
+		INSERT INTO amex_transactions
+		(amex_id, outgoing_id)
+		VALUES ("aaaaaaaaaaaaaaaaaaaaaaa", ?)
+	`)
+	_, _ = statement.Exec(outgoing.ID)
+
+	err = outgoing.Delete()
+	assert.Nil(t, err)
+
+	_, err = NewOutgoingFromDB(*outgoing.ID, dbh)
+
+	assert.True(t, errors.Is(err, ErrOutgoingUnknown))
 }
 
 func TestToggleSettled(t *testing.T) {
@@ -71,8 +89,6 @@ func TestUpdated(t *testing.T) {
 
 	assert.Equal(t, updatedOutgoing.Description, "Groceries")
 }
-
-/************************** Private Implementation ****************************/
 
 func randomUserAndOutgoing(dbh *sql.DB) *Outgoing {
 	statement, _ := dbh.Prepare(`

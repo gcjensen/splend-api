@@ -2,7 +2,6 @@ package splend
 
 import (
 	"database/sql"
-	"errors"
 
 	"github.com/gcjensen/amex"
 )
@@ -24,8 +23,6 @@ type User struct {
 	MonzoAccount MonzoAccount `json:"-"`
 }
 
-var ErrAlreadyExists = errors.New("amex transaction already exists")
-
 func NewUser(user *User, sha256 string, dbh *sql.DB) (*User, error) {
 	self := user
 	self.dbh = dbh
@@ -42,7 +39,7 @@ func NewUserFromDB(id int, dbh *sql.DB) (*User, error) {
 	).Scan(&self.Email)
 
 	if err != nil {
-		return nil, errors.New("unknown user")
+		return nil, ErrUserUnknown
 	}
 
 	err = self.getUser()
@@ -132,7 +129,7 @@ func (u *User) GetOutgoings() ([]Outgoing, error) {
 
 func (u *User) LinkMonzo(account *MonzoAccount) error {
 	if u.MonzoAccount.ID != nil {
-		return errors.New("monzo account already linked")
+		return ErrMonzoAccountAlreadyLinked
 	}
 
 	u.MonzoAccount.ID = account.ID
@@ -218,7 +215,7 @@ func (u *User) getUser() error {
 	)
 
 	if err != nil {
-		return errors.New("unknown user")
+		return ErrUserUnknown
 	}
 
 	err = u.getPartner()
@@ -234,7 +231,7 @@ func (u *User) getUser() error {
 
 func (u *User) getPartner() error {
 	if u.CoupleID == nil {
-		return errors.New("no partner")
+		return ErrUserNotInCouple
 	}
 
 	query := `

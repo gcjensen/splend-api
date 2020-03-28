@@ -2,7 +2,6 @@ package splend
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 )
@@ -37,8 +36,15 @@ func NewOutgoingFromDB(id int, dbh *sql.DB) (*Outgoing, error) {
 }
 
 func (o *Outgoing) Delete() error {
-	statement, _ := o.dbh.Prepare(`DELETE FROM outgoings WHERE id = ?`)
+	statement, _ := o.dbh.Prepare(`DELETE FROM amex_transactions WHERE outgoing_id = ?`)
 	_, err := statement.Exec(*o.ID)
+
+	if err != nil {
+		return nil
+	}
+
+	statement, _ = o.dbh.Prepare(`DELETE FROM outgoings WHERE id = ?`)
+	_, err = statement.Exec(*o.ID)
 
 	return err
 }
@@ -140,7 +146,7 @@ func (o *Outgoing) getInsertDetails() error {
 
 func (o *Outgoing) getOutgoing() error {
 	if o.ID == nil {
-		return errors.New("unknown outgoing")
+		return ErrOutgoingUnknown
 	}
 
 	query := `
@@ -159,7 +165,7 @@ func (o *Outgoing) getOutgoing() error {
 	)
 
 	if err != nil {
-		return errors.New("unknown outgoing")
+		return ErrOutgoingUnknown
 	}
 
 	return err

@@ -96,8 +96,7 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 					log.Printf("Transaction not valid. Ignoring")
 				}
 			} else {
-				err = errors.New("unregistered webhook type")
-				respondWithError(err, writer)
+				respondWithError(errors.New("unregistered webhook type"), writer)
 				return
 			}
 		}
