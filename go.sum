@@ -17,6 +17,8 @@ github.com/gcjensen/amex v0.0.0-20200223140202-053465002b71 h1:980VaIUymMrtr2Hjc
 github.com/gcjensen/amex v0.0.0-20200223140202-053465002b71/go.mod h1:K/+kMmYq02dBRIhUDhN7bf8FIGJZTn4CSSp4//jc1Jo=
 github.com/gcjensen/amex v0.0.0-20200802162434-847451856125 h1:/O7idD25bipMPLGJG0Fi7IC7BfTx/HKyX8w9i47Fry4=
 github.com/gcjensen/amex v0.0.0-20200802162434-847451856125/go.mod h1:K/+kMmYq02dBRIhUDhN7bf8FIGJZTn4CSSp4//jc1Jo=
+github.com/gcjensen/amex v0.0.0-20200920124611-0cd15b26bdc1 h1:x9Ik8+qfXzI5Ox9ikhQdfc/GLuA/i5osD5vDvVfLQ3o=
+github.com/gcjensen/amex v0.0.0-20200920124611-0cd15b26bdc1/go.mod h1:K/+kMmYq02dBRIhUDhN7bf8FIGJZTn4CSSp4//jc1Jo=
 github.com/go-sql-driver/mysql v1.5.0 h1:ozyZYNQW3x3HtqT1jira07DN2PArx2v7/mN66gGcHOs=
 github.com/go-sql-driver/mysql v1.5.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=
 github.com/gobwas/httphead v0.0.0-20180130184737-2c6c146eadee h1:s+21KNqlpePfkah2I+gwHF8xmJWRjooY+5248k6m4A0=
