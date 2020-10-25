@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	amexTimeout = 20 * time.Second
+	amexTimeout = 60 * time.Second
 	apiTimeout  = 5 * time.Second
 )
 
