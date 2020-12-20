@@ -3,7 +3,6 @@ package http
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -58,7 +57,7 @@ func DeleteOutgoing(dbh *sql.DB) httprouter.Handle {
 			}
 		}
 
-		respondWithError(errors.New("outgoingID parameter expected"), writer)
+		respondWithError(ErrOutgoingIDExpected, writer)
 	}
 }
 

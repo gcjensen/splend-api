@@ -3,7 +3,6 @@ package http
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"log"
 	"math"
@@ -61,6 +60,8 @@ func AddFromAmex(dbh *sql.DB) httprouter.Handle {
 
 func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		log.Printf("Transaction received from Monzo")
+
 		id, err := strconv.Atoi(params.ByName("id"))
 		if err != nil {
 			respondWithError(err, writer)
@@ -68,37 +69,37 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 		}
 
 		user, err := splend.NewUserFromDB(id, dbh)
+		if err != nil {
+			respondWithError(err, writer)
+			return
+		}
 
-		log.Printf("Transaction received from Monzo")
+		decoder := json.NewDecoder(req.Body)
 
-		if err == nil {
-			decoder := json.NewDecoder(req.Body)
+		var transaction map[string]interface{}
+		err = decoder.Decode(&transaction)
 
-			var transaction map[string]interface{}
-			err = decoder.Decode(&transaction)
+		monzoJSON, _ := json.Marshal(transaction)
+		logTransaction("monzo", monzoJSON)
 
-			monzoJSON, _ := json.Marshal(transaction)
-			logTransaction("monzo", monzoJSON)
+		if transaction["type"] == "transaction.created" {
+			data := transaction["data"].(map[string]interface{})
 
-			if transaction["type"] == "transaction.created" {
-				data := transaction["data"].(map[string]interface{})
-
-				if verifyTransaction(user, data) {
-					merchant := data["merchant"].(map[string]interface{})
-					outgoing := &splend.Outgoing{
-						Amount:      int(math.Abs(data["amount"].(float64))),
-						Category:    "Other",
-						Description: merchant["name"].(string),
-						Spender:     *user.ID,
-					}
-					err = user.AddOutgoing(outgoing)
-				} else {
-					log.Printf("Transaction not valid. Ignoring")
+			if verifyTransaction(user, data) {
+				merchant := data["merchant"].(map[string]interface{})
+				outgoing := &splend.Outgoing{
+					Amount:      int(math.Abs(data["amount"].(float64))),
+					Category:    "Other",
+					Description: merchant["name"].(string),
+					Spender:     *user.ID,
 				}
+				err = user.AddOutgoing(outgoing)
 			} else {
-				respondWithError(errors.New("unregistered webhook type"), writer)
-				return
+				log.Printf("Transaction not valid. Ignoring")
 			}
+		} else {
+			respondWithError(ErrUnregisteredWebhookType, writer)
+			return
 		}
 
 		if err != nil {
@@ -112,13 +113,11 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 
 func logTransaction(t string, txJSON []byte) {
 	filename := t + "-" + time.Now().Format("2006-01-02 15:04:05") + ".json"
-	_ = ioutil.WriteFile(logDir+filename, txJSON, 0644)
+	_ = ioutil.WriteFile(logDir+filename, txJSON, 0o600)
 }
 
-/*
- * Checks the transaction is a debit i.e. negative and that the Monzo account
- * is linked to the provided user
- */
+// Checks the transaction is a debit i.e. negative and that the Monzo account is
+// linked to the provided user.
 func verifyTransaction(user *splend.User, data map[string]interface{}) bool {
 	if merchant, ok := data["merchant"].(map[string]interface{}); ok {
 		if _, ok := merchant["name"]; ok {

@@ -20,3 +20,4 @@ issues:
     - path: test
       linters:
         - gomnd
+        - noctx

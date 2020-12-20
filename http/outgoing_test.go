@@ -1,4 +1,4 @@
-package http
+package http_test
 
 import (
 	"bytes"
@@ -9,17 +9,19 @@ import (
 	"testing"
 
 	"github.com/gcjensen/splend-api/config"
+	api "github.com/gcjensen/splend-api/http"
 	"github.com/gcjensen/splend-api/splend"
+	"github.com/gcjensen/splend-api/test"
 	"github.com/julienschmidt/httprouter"
 )
 
 func TestAddOutgoing(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
+	user, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
 
 	router := httprouter.New()
-	router.POST("/user/:id/add", AddOutgoing(dbh))
+	router.POST("/user/:id/add", api.AddOutgoing(dbh))
 
 	bodyString := fmt.Sprintf(`{`+
 		`"description":"Minerals",`+
@@ -54,12 +56,12 @@ func TestAddOutgoing(t *testing.T) {
 func TestDeleteOutgoing(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
-	_ = user.AddOutgoing(randomOutgoing())
+	user, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
+	_ = user.AddOutgoing(test.RandomOutgoing())
 	outgoings, _ := user.GetOutgoings()
 
 	router := httprouter.New()
-	router.POST("/outgoing/delete/:outgoingID", DeleteOutgoing(dbh))
+	router.POST("/outgoing/delete/:outgoingID", api.DeleteOutgoing(dbh))
 
 	req, _ := http.NewRequest(
 		"POST", fmt.Sprintf("/outgoing/delete/%d", *outgoings[0].ID), nil,
@@ -84,15 +86,15 @@ func TestDeleteOutgoing(t *testing.T) {
 func TestSettleOutgoing(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
-	_ = user.AddOutgoing(randomOutgoing())
+	user, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
+	_ = user.AddOutgoing(test.RandomOutgoing())
 	outgoings, _ := user.GetOutgoings()
 	outgoing := outgoings[0]
 
 	router := httprouter.New()
 	router.POST(
 		"/outgoing/settle/:outgoingID/:shouldSettle",
-		SettleOutgoing(dbh),
+		api.SettleOutgoing(dbh),
 	)
 
 	req, _ := http.NewRequest(
@@ -133,13 +135,13 @@ func TestSettleOutgoing(t *testing.T) {
 func TestUpdateOutgoing(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
-	_ = user.AddOutgoing(randomOutgoing())
+	user, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
+	_ = user.AddOutgoing(test.RandomOutgoing())
 	outgoings, _ := user.GetOutgoings()
 	outgoing := outgoings[0]
 
 	router := httprouter.New()
-	router.POST("/outgoing/update/:outgoingID", UpdateOutgoing(dbh))
+	router.POST("/outgoing/update/:outgoingID", api.UpdateOutgoing(dbh))
 
 	bodyString := fmt.Sprintf(`{`+
 		`"description":"Groceries",`+

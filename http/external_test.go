@@ -1,4 +1,4 @@
-package http
+package http_test
 
 import (
 	"bytes"
@@ -9,7 +9,9 @@ import (
 	"testing"
 
 	"github.com/gcjensen/splend-api/config"
+	api "github.com/gcjensen/splend-api/http"
 	"github.com/gcjensen/splend-api/splend"
+	"github.com/gcjensen/splend-api/test"
 	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,10 +19,10 @@ import (
 func TestAddAmexTransaction(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
+	user, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
 
 	router := httprouter.New()
-	router.POST("/user/:id/amex", AddFromAmex(dbh))
+	router.POST("/user/:id/amex", api.AddFromAmex(dbh))
 
 	bodyString := `{
 		"amount":"1700",
@@ -59,7 +61,7 @@ func TestAddAmexTransaction(t *testing.T) {
 func TestAddMonzoTransaction(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
+	user, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
 
 	account := "acc_XXXXXXXXXXXXXXXXXXXXXX"
 
@@ -69,7 +71,7 @@ func TestAddMonzoTransaction(t *testing.T) {
 	}
 
 	router := httprouter.New()
-	router.POST("/user/:id/monzo-webhook", AddFromMonzo(dbh))
+	router.POST("/user/:id/monzo-webhook", api.AddFromMonzo(dbh))
 
 	json, err := ioutil.ReadFile("../test/monzo-transaction.json")
 	if err != nil {

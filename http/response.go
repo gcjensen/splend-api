@@ -3,6 +3,7 @@ package http
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/gcjensen/splend-api/splend"
@@ -13,11 +14,11 @@ func respondWithError(err error, writer http.ResponseWriter) {
 
 	var message string
 
-	switch err {
-	case sql.ErrNoRows:
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
 		code = http.StatusNotFound
 		message = "User not found"
-	case splend.ErrAlreadyExists:
+	case errors.Is(err, splend.ErrAlreadyExists):
 		code = http.StatusBadRequest
 		message = err.Error()
 	default:

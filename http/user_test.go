@@ -1,4 +1,4 @@
-package http
+package http_test
 
 import (
 	"fmt"
@@ -10,14 +10,16 @@ import (
 	"time"
 
 	"github.com/gcjensen/splend-api/config"
+	api "github.com/gcjensen/splend-api/http"
 	"github.com/gcjensen/splend-api/splend"
+	"github.com/gcjensen/splend-api/test"
 	"github.com/julienschmidt/httprouter"
 )
 
 func TestGetUserMonthBreakdown(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
+	user, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
 
 	groceries := &splend.Outgoing{
 		Description: "Weekly shop",
@@ -44,7 +46,7 @@ func TestGetUserMonthBreakdown(t *testing.T) {
 	_ = user.AddOutgoing(beers)
 
 	router := httprouter.New()
-	router.GET("/user/:id/outgoings/breakdown/:month", GetUserMonthBreakdown(dbh))
+	router.GET("/user/:id/outgoings/breakdown/:month", api.GetUserMonthBreakdown(dbh))
 
 	month := time.Now().Format("2006-01")
 	url := fmt.Sprintf("/user/%d/outgoings/breakdown/%s", *user.ID, month)
@@ -73,13 +75,13 @@ func TestGetUserMonthBreakdown(t *testing.T) {
 func TestGetUserOutgoingsEndPoint(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
-	_ = user.AddOutgoing(randomOutgoing())
+	user, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
+	_ = user.AddOutgoing(test.RandomOutgoing())
 	outgoings, _ := user.GetOutgoings()
 	outgoing := outgoings[0]
 
 	router := httprouter.New()
-	router.GET("/user/:id/outgoings", GetUserOutgoings(dbh))
+	router.GET("/user/:id/outgoings", api.GetUserOutgoings(dbh))
 
 	url := fmt.Sprintf("/user/%d/outgoings", *user.ID)
 	req, _ := http.NewRequest("GET", url, nil)
@@ -116,14 +118,14 @@ func TestGetUserOutgoingsEndPoint(t *testing.T) {
 func TestLogInUser(t *testing.T) {
 	dbh := config.TestDBH()
 
-	tempUser, _ := splend.NewUser(randomUser(), randomSha256(), dbh)
+	tempUser, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
 
-	randomUser := randomUser()
+	randomUser := test.RandomUser()
 	randomUser.CoupleID = tempUser.CoupleID
-	testUser, _ := splend.NewUser(randomUser, randomSha256(), dbh)
+	testUser, _ := splend.NewUser(randomUser, test.RandomSha256(), dbh)
 
 	router := httprouter.New()
-	router.POST("/user/:id", LogInUser(dbh))
+	router.POST("/user/:id", api.LogInUser(dbh))
 
 	id := strconv.Itoa(*testUser.ID)
 	req, _ := http.NewRequest("POST", "/user/"+id, nil)
