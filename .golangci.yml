@@ -20,4 +20,5 @@ issues:
     - path: test
       linters:
         - gomnd
+        - gosec
         - noctx

@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 
-	// Blank import is needed for the mysql driver
+	// Blank import is needed for the mysql driver.
 	_ "github.com/go-sql-driver/mysql"
 	"gopkg.in/yaml.v2"
 )
@@ -67,7 +67,6 @@ func TestDBH() *sql.DB {
 func Load() *Config {
 	// Update to point towards your config file
 	configFile, err := ioutil.ReadFile("/etc/splend-api.yaml")
-
 	if err != nil {
 		log.Printf("configFile.Get err #%v", err)
 	}

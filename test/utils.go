@@ -4,10 +4,10 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
-	"github.com/icrowley/fake"
 	"math/rand"
 
 	"github.com/gcjensen/splend-api/splend"
+	"github.com/icrowley/fake"
 )
 
 func RandomSha256() string {
@@ -34,6 +34,7 @@ func RandomUserAndOutgoing(dbh *sql.DB) *splend.Outgoing {
 		(first_name, last_name, email, sha256)
 		VALUES (?, ?, ?, "")
 	`)
+	defer statement.Close()
 
 	_, _ = statement.Exec(fake.FirstName(), fake.LastName(), fake.EmailAddress())
 

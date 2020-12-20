@@ -21,6 +21,14 @@ const (
 	apiTimeout  = 5 * time.Second
 )
 
+type splendClient struct {
+	Token string
+	URL   string
+
+	client http.Client
+	wg     sync.WaitGroup
+}
+
 func main() {
 	userID := os.Getenv("ID")
 	amexUserID := os.Getenv("USER_ID")
@@ -30,26 +38,32 @@ func main() {
 	log.Println("Fetching pending transactions from Amex")
 
 	ctx, cancel := context.WithTimeout(context.Background(), amexTimeout)
+	defer cancel()
 
 	a, _ := amex.NewContext(ctx, amexUserID, amexPassword)
 
 	transactions, err := a.GetPendingTransactions()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	log.Printf("%d pending transactions fetched", len(transactions))
 
-	cancel()
 	a.Close()
 
 	httpClient := http.Client{Timeout: apiTimeout}
 	config := config.Load()
-	apiURL := fmt.Sprintf("http://%s:%d/user/%s/amex", config.Host, config.Port, userID)
+	apiURL := fmt.Sprintf("http://%s:%d", config.Host, config.Port)
+
+	client := splendClient{
+		Token:  token,
+		URL:    apiURL,
+		client: httpClient,
+		wg:     sync.WaitGroup{},
+	}
 
 	log.Println("Posting transactions to splend")
-
-	var wg sync.WaitGroup
 
 	for _, tx := range transactions {
 		// We're not interested in negatives amounts i.e. credits
@@ -59,47 +73,53 @@ func main() {
 		}
 
 		inc := 1 // Linter doesn't allow magic numbers
-		wg.Add(inc)
+		client.wg.Add(inc)
 
-		go postToSplend(&wg, httpClient, apiURL, token, tx)
+		go client.postToSplend(ctx, userID, tx)
 	}
 
-	wg.Wait()
+	client.wg.Wait()
 	log.Println("Done.")
 }
 
-func postToSplend(wg *sync.WaitGroup, cl http.Client, url, token string, tx *amex.Transaction) {
-	defer wg.Done()
+func (cl *splendClient) postToSplend(ctx context.Context, userID string, tx *amex.Transaction) {
+	defer cl.wg.Done()
 
 	txJSON, err := json.Marshal(tx)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(txJSON))
+	url := cl.URL + fmt.Sprintf("/user/%s/amex", userID)
+
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(txJSON))
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Token", token)
+	req.Header.Add("Token", cl.Token)
 
-	resp, err := cl.Do(req)
+	resp, err := cl.client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+
 		return
 	}
 
 	var response map[string]string
 	if err := json.Unmarshal(body, &response); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
 
