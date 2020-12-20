@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/gcjensen/amex"
-	"github.com/gcjensen/splend-api"
+	"github.com/gcjensen/splend-api/splend"
 	"github.com/julienschmidt/httprouter"
 )
 

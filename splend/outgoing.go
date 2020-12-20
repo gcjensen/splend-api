@@ -15,29 +15,35 @@ type Outgoing struct {
 	Category    string     `json:"category"`
 	Settled     *time.Time `json:"settled"`
 	Timestamp   *time.Time `json:"timestamp"`
-	dbh         *sql.DB
+
+	dbh         *sql.DB `json:"-"`
 }
 
 func NewOutgoing(outgoing *Outgoing, dbh *sql.DB) (*Outgoing, error) {
-	self := outgoing
-	self.dbh = dbh
-	err := self.getInsertDetails()
-	self.dbh = nil
+	o := outgoing
+	o.dbh = dbh
+	err := o.getInsertDetails()
 
-	return self, err
+	return o, err
 }
 
 func NewOutgoingFromDB(id int, dbh *sql.DB) (*Outgoing, error) {
-	self := &Outgoing{ID: &id}
-	self.dbh = dbh
-	err := self.getOutgoing()
+	o := &Outgoing{ID: &id}
+	o.dbh = dbh
+	err := o.getOutgoing()
 
-	return self, err
+	return o, err
 }
 
 func (o *Outgoing) Delete() error {
-	statement, _ := o.dbh.Prepare(`DELETE FROM amex_transactions WHERE outgoing_id = ?`)
-	_, err := statement.Exec(*o.ID)
+	statement, err := o.dbh.Prepare(`
+		DELETE FROM amex_transactions WHERE outgoing_id = ?
+	`)
+	if err != nil {
+		return nil
+	}
+
+	_, err = statement.Exec(*o.ID)
 
 	if err != nil {
 		return nil

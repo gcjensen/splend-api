@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gcjensen/splend-api"
 	"github.com/gcjensen/splend-api/config"
+	"github.com/gcjensen/splend-api/splend"
 	"github.com/julienschmidt/httprouter"
 )
 

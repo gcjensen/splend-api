@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gcjensen/splend-api"
+	"github.com/gcjensen/splend-api/splend"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -58,6 +58,30 @@ func GetUserOutgoings(dbh *sql.DB) httprouter.Handle {
 		}
 
 		respondWithJSON(writer, http.StatusOK, outgoings)
+	}
+}
+
+func GetUserSummary(dbh *sql.DB) httprouter.Handle {
+	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		id, err := strconv.Atoi(params.ByName("id"))
+		if err != nil {
+			respondWithError(err, writer)
+			return
+		}
+
+		user, err := splend.NewUserFromDB(id, dbh)
+
+		var summary *splend.Summary
+		if err == nil {
+			summary, err = user.GetSummary()
+		}
+
+		if err != nil {
+			respondWithError(err, writer)
+			return
+		}
+
+		respondWithJSON(writer, http.StatusOK, summary)
 	}
 }
 

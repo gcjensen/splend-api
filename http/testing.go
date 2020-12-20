@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/gcjensen/splend-api"
+	"github.com/gcjensen/splend-api/splend"
 	"github.com/icrowley/fake"
 )
 

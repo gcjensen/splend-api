@@ -23,6 +23,10 @@ type User struct {
 	MonzoAccount MonzoAccount `json:"-"`
 }
 
+type Summary struct {
+	Balance int `json:"balance"`
+}
+
 func NewUser(user *User, sha256 string, dbh *sql.DB) (*User, error) {
 	self := user
 	self.dbh = dbh
@@ -125,6 +129,26 @@ func (u *User) GetOutgoings() ([]Outgoing, error) {
 	}
 
 	return outgoings, err
+}
+
+func (u *User) GetSummary() (*Summary, error) {
+	var partnerID int
+	if u.Partner.ID != nil {
+		partnerID = *u.Partner.ID
+	}
+
+	query := `
+		SELECT SUM(IF(spender_id= ?, owed, 0) - IF(spender_id= ?, owed, 0)) 
+		FROM outgoings WHERE settled is null;
+	`
+
+	var s Summary
+	err := u.dbh.QueryRow(query, u.ID, partnerID).Scan(&s.Balance)
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
 }
 
 func (u *User) LinkMonzo(account *MonzoAccount) error {

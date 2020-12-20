@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gcjensen/splend-api"
+	"github.com/gcjensen/splend-api/splend"
 )
 
 func respondWithError(err error, writer http.ResponseWriter) {
