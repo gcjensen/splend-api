@@ -1,4 +1,4 @@
-package http_test
+package api_test
 
 import (
 	"fmt"
@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gcjensen/splend-api/api"
 	"github.com/gcjensen/splend-api/config"
-	api "github.com/gcjensen/splend-api/http"
 	"github.com/gcjensen/splend-api/splend"
 	"github.com/gcjensen/splend-api/test"
 	"github.com/julienschmidt/httprouter"
