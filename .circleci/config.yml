@@ -36,9 +36,6 @@ jobs:
             sudo apt install -y default-mysql-client
             mysql -h 127.0.0.1 -u ci -pic ci_db < meta/schema.sql
       - run:
-          name: Build
-          command: go build
-      - run:
           name: Run tests
           command: |
             go test ./...
