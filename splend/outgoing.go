@@ -2,6 +2,7 @@ package splend
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -16,7 +17,7 @@ type Outgoing struct {
 	Settled     *time.Time `json:"settled"`
 	Timestamp   *time.Time `json:"timestamp"`
 
-	dbh         *sql.DB `json:"-"`
+	dbh *sql.DB `json:"-"`
 }
 
 func NewOutgoing(outgoing *Outgoing, dbh *sql.DB) (*Outgoing, error) {
@@ -43,6 +44,8 @@ func (o *Outgoing) Delete() error {
 		return nil
 	}
 
+	defer statement.Close()
+
 	_, err = statement.Exec(*o.ID)
 
 	if err != nil {
@@ -50,6 +53,8 @@ func (o *Outgoing) Delete() error {
 	}
 
 	statement, _ = o.dbh.Prepare(`DELETE FROM outgoings WHERE id = ?`)
+	defer statement.Close()
+
 	_, err = statement.Exec(*o.ID)
 
 	return err
@@ -88,6 +93,7 @@ func (o *Outgoing) Update() error {
 		SET description = ?, amount = ?, owed = ?, category_id = ?
 		WHERE id = ?
 	`)
+	defer statement.Close()
 
 	_, err = statement.Exec(
 		o.Description, o.Amount, o.Owed, categoryID, *o.ID,
@@ -98,56 +104,12 @@ func (o *Outgoing) Update() error {
 
 func (o *Outgoing) getInsertDetails() error {
 	err := o.getOutgoing()
-	if err != nil {
-		var categoryID int
 
-		err := o.dbh.QueryRow(
-			`SELECT id FROM categories WHERE name = ?`, o.Category,
-		).Scan(&categoryID)
-
-		if err != nil {
-			statement, _ := o.dbh.Prepare(
-				`INSERT INTO categories (name) VALUES (?)`,
-			)
-
-			_, err = statement.Exec(o.Category)
-			if err != nil {
-				return err
-			}
-
-			err := o.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&categoryID)
-			if err != nil {
-				return err
-			}
-		}
-
-		var settled string
-		if o.Owed == 0 {
-			settled = "NOW()"
-		} else {
-			settled = "NULL"
-		}
-
-		// #nosec - 'settled' is set above, so there's no risk of sql injection
-		statement, _ := o.dbh.Prepare(fmt.Sprintf(`
-			INSERT INTO outgoings
-			(description, amount, owed, spender_id, category_id, settled,
-			timestamp)
-			VALUES (?, ?, ?, ?, ?, %s, NOW())
-		`, settled))
-
-		_, err = statement.Exec(o.Description, o.Amount, o.Owed, o.Spender, categoryID)
-		if err != nil {
-			return err
-		}
-
-		err = o.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&o.ID)
-		if err != nil {
-			return err
-		}
+	if errors.Is(err, ErrOutgoingUnknown) {
+		err = o.insertOutgoing()
 	}
 
-	return nil
+	return err
 }
 
 func (o *Outgoing) getOutgoing() error {
@@ -170,9 +132,69 @@ func (o *Outgoing) getOutgoing() error {
 		&o.Timestamp,
 	)
 
-	if err != nil {
+	if errors.Is(err, sql.ErrNoRows) {
 		return ErrOutgoingUnknown
 	}
 
 	return err
+}
+
+func (o *Outgoing) insertCategory() (*int, error) {
+	statement, _ := o.dbh.Prepare(
+		`INSERT INTO categories (name) VALUES (?)`,
+	)
+	defer statement.Close()
+
+	_, err := statement.Exec(o.Category)
+	if err != nil {
+		return nil, err
+	}
+
+	var categoryID int
+	err = o.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&categoryID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &categoryID, nil
+}
+
+func (o *Outgoing) insertOutgoing() error {
+	var categoryID *int
+
+	err := o.dbh.QueryRow(
+		`SELECT id FROM categories WHERE name = ?`, o.Category,
+	).Scan(&categoryID)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		categoryID, err = o.insertCategory()
+	}
+
+	if err != nil {
+		return nil
+	}
+
+	var settled string
+	if o.Owed == 0 {
+		settled = "NOW()"
+	} else {
+		settled = "NULL"
+	}
+
+	// #nosec - 'settled' is set above, so there's no risk of sql injection
+	statement, _ := o.dbh.Prepare(fmt.Sprintf(`
+			INSERT INTO outgoings
+			(description, amount, owed, spender_id, category_id, settled,
+			timestamp)
+			VALUES (?, ?, ?, ?, ?, %s, NOW())
+		`, settled))
+	defer statement.Close()
+
+	_, err = statement.Exec(o.Description, o.Amount, o.Owed, o.Spender, &categoryID)
+	if err != nil {
+		return err
+	}
+
+	return o.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&o.ID)
 }

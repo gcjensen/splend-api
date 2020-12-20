@@ -46,6 +46,8 @@ func TestOutgoing_Delete(t *testing.T) {
 		(amex_id, outgoing_id)
 		VALUES ("aaaaaaaaaaaaaaaaaaaaaaa", ?)
 	`)
+	defer statement.Close()
+
 	_, _ = statement.Exec(outgoing.ID)
 
 	err = outgoing.Delete()

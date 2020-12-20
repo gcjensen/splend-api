@@ -2,6 +2,7 @@ package splend
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/gcjensen/amex"
 )
@@ -38,10 +39,10 @@ func NewUser(user *User, sha256 string, dbh *sql.DB) (*User, error) {
 
 func NewUserFromDB(id int, dbh *sql.DB) (*User, error) {
 	self := &User{dbh: dbh, MonzoAccount: MonzoAccount{}}
+
 	err := dbh.QueryRow(
 		`SELECT email FROM users WHERE id = ?`, id,
 	).Scan(&self.Email)
-
 	if err != nil {
 		return nil, ErrUserUnknown
 	}
@@ -53,7 +54,7 @@ func NewUserFromDB(id int, dbh *sql.DB) (*User, error) {
 
 func (u *User) AddAmexTransaction(tx amex.Transaction) error {
 	err := u.isAmexTransactionNew(tx)
-	if err != sql.ErrNoRows {
+	if !errors.Is(err, sql.ErrNoRows) {
 		return ErrAlreadyExists
 	}
 
@@ -77,6 +78,7 @@ func (u *User) AddAmexTransaction(tx amex.Transaction) error {
 	statement, _ := u.dbh.Prepare(
 		`INSERT INTO amex_transactions (amex_id, outgoing_id) VALUES (?, ?)`,
 	)
+	defer statement.Close()
 
 	_, err = statement.Exec(tx.ID, outgoingID)
 
@@ -143,6 +145,7 @@ func (u *User) GetSummary() (*Summary, error) {
 	`
 
 	var s Summary
+
 	err := u.dbh.QueryRow(query, u.ID, partnerID).Scan(&s.Balance)
 	if err != nil {
 		return nil, err
@@ -157,9 +160,11 @@ func (u *User) LinkMonzo(account *MonzoAccount) error {
 	}
 
 	u.MonzoAccount.ID = account.ID
+
 	statement, _ := u.dbh.Prepare(
 		`INSERT INTO monzo_accounts (user_id, account_id) VALUES (?, ?)`,
 	)
+	defer statement.Close()
 
 	_, err := statement.Exec(*u.ID, *account.ID)
 
@@ -170,7 +175,6 @@ func (u *User) addCouple() (*int, error) {
 	_, err := u.dbh.Exec(`
 		INSERT INTO couples (joining_date) VALUES (NOW())
 	`)
-
 	if err != nil {
 		return nil, err
 	}
@@ -187,39 +191,11 @@ func (u *User) addCouple() (*int, error) {
 
 func (u *User) getInsertDetails(sha256 string) error {
 	err := u.getUser()
-	if err != nil {
-		if u.CoupleID == nil {
-			coupleID, err := u.addCouple()
-			if err != nil {
-				return err
-			}
-
-			u.CoupleID = coupleID
-		}
-
-		statement, _ := u.dbh.Prepare(`
-			INSERT INTO users
-			(first_name, last_name, email, couple_id, colour, sha256)
-			VALUES (?, ?, ?, ?, ?, ?)
-		`)
-
-		_, err = statement.Exec(u.FirstName, u.LastName, u.Email, *u.CoupleID, *u.Colour, sha256)
-		if err != nil {
-			return err
-		}
-
-		err = u.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&u.ID)
-		if err != nil {
-			return err
-		}
-
-		err = u.getPartner()
-		if err != nil {
-			return err
-		}
+	if errors.Is(err, ErrUserUnknown) {
+		err = u.insertDetails(sha256)
 	}
 
-	return nil
+	return err
 }
 
 func (u *User) getUser() error {
@@ -237,9 +213,12 @@ func (u *User) getUser() error {
 		&u.Colour,
 		&u.IconLink,
 	)
-
 	if err != nil {
-		return ErrUserUnknown
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrUserUnknown
+		}
+
+		return err
 	}
 
 	err = u.getPartner()
@@ -276,11 +255,41 @@ func (u *User) getPartner() error {
 	)
 	u.Partner = partner
 
-	if err != sql.ErrNoRows {
+	if !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
 
 	return nil
+}
+
+func (u *User) insertDetails(sha256 string) error {
+	if u.CoupleID == nil {
+		coupleID, err := u.addCouple()
+		if err != nil {
+			return err
+		}
+
+		u.CoupleID = coupleID
+	}
+
+	statement, _ := u.dbh.Prepare(`
+			INSERT INTO users
+			(first_name, last_name, email, couple_id, colour, sha256)
+			VALUES (?, ?, ?, ?, ?, ?)
+		`)
+	defer statement.Close()
+
+	_, err := statement.Exec(u.FirstName, u.LastName, u.Email, *u.CoupleID, *u.Colour, sha256)
+	if err != nil {
+		return err
+	}
+
+	err = u.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&u.ID)
+	if err != nil {
+		return err
+	}
+
+	return u.getPartner()
 }
 
 func (u *User) isAmexTransactionNew(tx amex.Transaction) error {

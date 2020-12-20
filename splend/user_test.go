@@ -32,7 +32,6 @@ func TestNewUser(t *testing.T) {
 	_, err = splend.NewUserFromDB(10000, dbh)
 	assert.NotNil(t, err)
 	assert.True(t, errors.Is(err, splend.ErrUserUnknown))
-
 }
 
 func TestUser_AddGetOutgoings(t *testing.T) {
@@ -92,7 +91,8 @@ func TestUser_GetSummary(t *testing.T) {
 	owed := 0
 	for _, o := range outgoings {
 		owed += o.Owed
-		user.AddOutgoing(o)
+		err := user.AddOutgoing(o)
+		assert.Nil(t, err)
 	}
 
 	s, err := user.GetSummary()
