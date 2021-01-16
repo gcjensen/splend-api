@@ -13,12 +13,14 @@ import (
 
 type Config struct {
 	Database struct {
+		Hostname string `yaml:"hostname"`
 		Username string `yaml:"username"`
 		Password string `yaml:"password"`
 		Name     string `yaml:"name"`
 	} `yaml:"database"`
 
 	TestDatabase struct {
+		Hostname string `yaml:"hostname"`
 		Username string `yaml:"username"`
 		Password string `yaml:"password"`
 		Name     string `yaml:"name"`
@@ -31,9 +33,10 @@ type Config struct {
 func SplendDBH() *sql.DB {
 	c := Load()
 	connectionString := fmt.Sprintf(
-		"%s:%s@/%s?%s",
+		"%s:%s@(%s)/%s?%s",
 		c.Database.Username,
 		c.Database.Password,
+		c.Database.Hostname,
 		c.Database.Name,
 		"parseTime=true",
 	)
@@ -49,9 +52,10 @@ func SplendDBH() *sql.DB {
 func TestDBH() *sql.DB {
 	c := Load()
 	connectionString := fmt.Sprintf(
-		"%s:%s@/%s?%s",
+		"%s:%s@(%s)/%s?%s",
 		c.TestDatabase.Username,
 		c.TestDatabase.Password,
+		c.Database.Hostname,
 		c.TestDatabase.Name,
 		"parseTime=true",
 	)

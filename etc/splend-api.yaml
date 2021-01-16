@@ -1,9 +1,11 @@
 database:
+  hostname: 'localhost'
   username: 'root'
   password: 'your-db-password'
   name: 'your-db-name'
 
 test_database:
+  hostname: 'localhost'
   username: 'test'
   password: 'your-test-db-password'
   name: 'your-test-db-name'
