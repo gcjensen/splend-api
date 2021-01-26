@@ -31,7 +31,8 @@ jobs:
       - run:
           name: Set up config and install mysql CLI
           command: |
-            sudo scp .circleci/splend-api.yaml /etc/
+            sudo mkdir /etc/splend
+            sudo scp .circleci/splend-api.yaml /etc/splend/
             sudo apt-get update
             sudo apt install -y default-mysql-client
             mysql -h 127.0.0.1 -u ci -pic ci_db < meta/schema.sql

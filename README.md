@@ -4,21 +4,17 @@ shared expenditure with your other half.
 
 [![CircleCI](https://circleci.com/gh/gcjensen/splend-api/tree/master.svg?style=svg&circle-token=cd1f6a0dfb674a6e51208a65872cf8bb96bef46f)](https://circleci.com/gh/gcjensen/splend-api/tree/master)
 
-This project is still under active development. Please see the project
-[issues](https://github.com/gcjensen/splend-api/issues) for planned features
-etc.
+### Build Instructions
 
-### Build & Development Instructions
+The API, nginx reverse proxy and mysql database can all be brought up using
+docker compose:
 
-- Install: `go get github.com/gcjensen/splend-api`
-- `cd` into the `splend-api` directory
-- Install the dependencies: `go get ./...`
-- Create a database and import the schema in `meta/schema.sql`
-- Copy the `etc/splend-api.yaml` config file to `/etc/splend-api.yaml` and
-  update it to reflect the details of your database created above
-- Change to the main application directory: `cd cmd/splend-api/`
-- Compile the app: `go build`
-- Run the executable: `./splend-api`
+```
+docker-compose -f docker-compose.yaml -f dev.yaml up
+```
+
+Bare in mind you'll need to import `meta/schema.sql` on the initial run of the
+mysql container.
 
 ### Running the tests
 

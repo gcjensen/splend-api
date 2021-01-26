@@ -1,0 +1,28 @@
+version: "3.6"
+
+services:
+  splend-api:
+    build: "."
+    volumes:
+      - ./etc/splend/splend-api.yaml:/etc/splend/splend-api.yaml
+
+  db:
+    image: mysql:8.0.22
+    restart: always
+    secrets:
+      - mysql-passwd
+    volumes:
+      - db-data:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=splend
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql-passwd
+    networks:
+      - splend-network
+
+volumes:
+  db-data:
+
+secrets:
+  mysql-passwd:
+    file: etc/mysql-passwd.txt
+

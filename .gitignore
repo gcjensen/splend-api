@@ -12,3 +12,7 @@ splend-api
 *.swp
 
 .idea/
+
+etc/splend/splend-api.prod.yaml
+etc/mysql-passwd.txt
+etc/nginx

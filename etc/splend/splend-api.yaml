@@ -1,0 +1,14 @@
+database:
+  hostname: 'db'
+  username: 'root'
+  password: 'dev-passwd'
+  name: 'splend'
+
+test_database:
+  hostname: 'db'
+  username: 'root'
+  password: 'dev-passwd'
+  name: 'splend'
+
+host: '0.0.0.0'
+port: 3000

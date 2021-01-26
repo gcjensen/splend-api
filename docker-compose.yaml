@@ -1,0 +1,22 @@
+version: "3.6"
+
+services:
+  splend-api:
+    build: "."
+    networks:
+      - splend-network
+
+  nginx-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    ports:
+      - "3002:3002"
+    depends_on:
+      - splend-api
+    networks:
+      - splend-network
+
+networks:
+  splend-network:
+    driver: bridge
