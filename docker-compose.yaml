@@ -12,6 +12,7 @@ services:
       dockerfile: Dockerfile.nginx
     ports:
       - "3002:3002"
+      - "80:80"
     depends_on:
       - splend-api
     networks:
