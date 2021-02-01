@@ -19,6 +19,10 @@ RUN go build -o splend-api cmd/splend-api/main.go
 
 FROM alpine:latest
 
+ENV APP_USER splend
+RUN addgroup -S $APP_USER && adduser -S -G $APP_USER $APP_USER
+USER $APP_USER
+
 COPY etc/splend/splend-api.prod.yaml /etc/splend/splend-api.yaml
 COPY --from=build /go/src/splend-api/splend-api /usr/bin/
 
