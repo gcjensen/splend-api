@@ -63,7 +63,8 @@ func TestUser_AddGetOutgoings(t *testing.T) {
 	err = partner.AddOutgoing(randomOutgoingThree)
 	assert.Nil(t, err)
 
-	outgoings, err := user.GetOutgoings()
+	where := map[string]interface{}{}
+	outgoings, err := user.GetOutgoings(where)
 
 	// Time of insertion is used (so hard to mock), so we just manually set
 	// it here
@@ -75,6 +76,11 @@ func TestUser_AddGetOutgoings(t *testing.T) {
 		[]string{outgoings[0].Description, outgoings[1].Description},
 	)
 	assert.Nil(t, err)
+
+	where["description"] = randomOutgoingOne.Description
+
+	outgoings, _ = user.GetOutgoings(where)
+	assert.Len(t, outgoings, 1)
 }
 
 func TestUser_GetSummary(t *testing.T) {
@@ -116,7 +122,7 @@ func TestUser_AddAmexTransaction(t *testing.T) {
 	err := user.AddAmexTransaction(amexTX)
 	assert.Nil(t, err)
 
-	outgoings, _ := user.GetOutgoings()
+	outgoings, _ := user.GetOutgoings(nil)
 	assert.Equal(t, amexTX.Amount, outgoings[0].Amount)
 	assert.Equal(t, amexTX.Description, outgoings[0].Description)
 

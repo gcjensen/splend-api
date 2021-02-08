@@ -52,7 +52,7 @@ func TestAddAmexTransaction(t *testing.T) {
 			rr.Body.String(), expectedResponse)
 	}
 
-	outgoings, _ := user.GetOutgoings()
+	outgoings, _ := user.GetOutgoings(nil)
 
 	assert.Equal(t, outgoings[0].Description, "Beers")
 	assert.Equal(t, outgoings[0].Amount, 1700)
@@ -97,7 +97,7 @@ func TestAddMonzoTransaction(t *testing.T) {
 			rr.Body.String(), expectedResponse)
 	}
 
-	outgoings, _ := user.GetOutgoings()
+	outgoings, _ := user.GetOutgoings(nil)
 
 	assert.Equal(t, outgoings[0].Description, "Waitrose & Partners")
 	assert.Equal(t, outgoings[0].Amount, 1254)

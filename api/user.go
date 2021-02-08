@@ -9,6 +9,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// How many months worth of outgoings to fetch.
+const outgoingsMonths = 3
+
 func GetUserMonthBreakdown(dbh *sql.DB) httprouter.Handle {
 	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
 		id, err := strconv.Atoi(params.ByName("id"))
@@ -49,7 +52,8 @@ func GetUserOutgoings(dbh *sql.DB) httprouter.Handle {
 		var outgoings []splend.Outgoing
 
 		if err == nil {
-			outgoings, err = user.GetOutgoings()
+			where := map[string]interface{}{"months": outgoingsMonths}
+			outgoings, err = user.GetOutgoings(where)
 		}
 
 		if err != nil {

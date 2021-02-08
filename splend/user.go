@@ -3,6 +3,7 @@ package splend
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/gcjensen/amex"
 )
@@ -26,6 +27,12 @@ type User struct {
 
 type Summary struct {
 	Balance int `json:"balance"`
+}
+
+//nolint
+var whereClauseMappings = map[string]string{
+	"months":      "timestamp > NOW() - INTERVAL ? MONTH",
+	"description": "description LIKE ?",
 }
 
 func NewUser(user *User, sha256 string, dbh *sql.DB) (*User, error) {
@@ -92,7 +99,7 @@ func (u *User) AddOutgoing(o *Outgoing) error {
 	return err
 }
 
-func (u *User) GetOutgoings() ([]Outgoing, error) {
+func (u *User) GetOutgoings(where map[string]interface{}) ([]Outgoing, error) {
 	var partnerID int
 	if u.Partner.ID != nil {
 		partnerID = *u.Partner.ID
@@ -103,11 +110,20 @@ func (u *User) GetOutgoings() ([]Outgoing, error) {
 		timestamp
 		FROM outgoings o
 		JOIN categories c ON o.category_id=c.id
-		WHERE spender_id = ? OR (spender_id = ? AND owed > 0)
-		ORDER BY o.timestamp DESC
+		WHERE (spender_id = ? OR (spender_id = ? AND owed > 0))
 	`
 
-	rows, err := u.dbh.Query(query, u.ID, partnerID)
+	params := []interface{}{u.ID, partnerID}
+
+	for field, value := range where {
+		query += fmt.Sprintf("AND %s ", whereClauseMappings[field])
+
+		params = append(params, value)
+	}
+
+	query += `ORDER BY o.timestamp DESC`
+
+	rows, err := u.dbh.Query(query, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +156,7 @@ func (u *User) GetSummary() (*Summary, error) {
 	}
 
 	query := `
-		SELECT SUM(IF(spender_id= ?, owed, 0) - IF(spender_id= ?, owed, 0)) 
+		SELECT SUM(IF(spender_id= ?, owed, 0) - IF(spender_id= ?, owed, 0))
 		FROM outgoings WHERE settled is null;
 	`
 

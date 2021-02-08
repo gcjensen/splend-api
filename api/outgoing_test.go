@@ -58,7 +58,7 @@ func TestDeleteOutgoing(t *testing.T) {
 
 	user, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
 	_ = user.AddOutgoing(test.RandomOutgoing())
-	outgoings, _ := user.GetOutgoings()
+	outgoings, _ := user.GetOutgoings(nil)
 
 	router := httprouter.New()
 	router.POST("/outgoing/delete/:outgoingID", api.DeleteOutgoing(dbh))
@@ -88,7 +88,7 @@ func TestSettleOutgoing(t *testing.T) {
 
 	user, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
 	_ = user.AddOutgoing(test.RandomOutgoing())
-	outgoings, _ := user.GetOutgoings()
+	outgoings, _ := user.GetOutgoings(nil)
 	outgoing := outgoings[0]
 
 	router := httprouter.New()
@@ -137,7 +137,7 @@ func TestUpdateOutgoing(t *testing.T) {
 
 	user, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
 	_ = user.AddOutgoing(test.RandomOutgoing())
-	outgoings, _ := user.GetOutgoings()
+	outgoings, _ := user.GetOutgoings(nil)
 	outgoing := outgoings[0]
 
 	router := httprouter.New()
