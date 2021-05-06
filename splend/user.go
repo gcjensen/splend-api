@@ -30,7 +30,7 @@ type Summary struct {
 }
 
 //nolint
-var whereClauseMappings = map[string]string{
+var WhereClauseMappings = map[string]string{
 	"months":      "timestamp > NOW() - INTERVAL ? MONTH",
 	"description": "description LIKE ?",
 }
@@ -116,7 +116,7 @@ func (u *User) GetOutgoings(where map[string]interface{}) ([]Outgoing, error) {
 	params := []interface{}{u.ID, partnerID}
 
 	for field, value := range where {
-		query += fmt.Sprintf("AND %s ", whereClauseMappings[field])
+		query += fmt.Sprintf("AND %s ", WhereClauseMappings[field])
 
 		params = append(params, value)
 	}

@@ -10,7 +10,7 @@ import (
 )
 
 // How many months worth of outgoings to fetch.
-const outgoingsMonths = 3
+const outgoingsMonths = 6
 
 func GetUserMonthBreakdown(dbh *sql.DB) httprouter.Handle {
 	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
@@ -51,8 +51,17 @@ func GetUserOutgoings(dbh *sql.DB) httprouter.Handle {
 
 		var outgoings []splend.Outgoing
 
+		// Add a default where field on 'months'
+		where := map[string]interface{}{"months": outgoingsMonths}
+
+		queryParams := req.URL.Query()
+		for key, param := range queryParams {
+			if _, ok := splend.WhereClauseMappings[key]; ok {
+				where[key] = param[0]
+			}
+		}
+
 		if err == nil {
-			where := map[string]interface{}{"months": outgoingsMonths}
 			outgoings, err = user.GetOutgoings(where)
 		}
 

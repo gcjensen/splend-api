@@ -83,7 +83,7 @@ func TestGetUserOutgoingsEndPoint(t *testing.T) {
 	router := httprouter.New()
 	router.GET("/user/:id/outgoings", api.GetUserOutgoings(dbh))
 
-	url := fmt.Sprintf("/user/%d/outgoings", *user.ID)
+	url := fmt.Sprintf("/user/%d/outgoings?description=%s", *user.ID, outgoing.Description)
 	req, _ := http.NewRequest("GET", url, nil)
 	rr := httptest.NewRecorder()
 
