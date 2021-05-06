@@ -33,7 +33,7 @@ jobs:
           command: |
             sudo mkdir /etc/splend
             sudo scp .circleci/splend-api.yaml /etc/splend/
-            sudo apt-get update
+            sudo apt-get update --allow-releaseinfo-change
             sudo apt install -y default-mysql-client
             mysql -h 127.0.0.1 -u ci -pic ci_db < meta/schema.sql
       - run:
