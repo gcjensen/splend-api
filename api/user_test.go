@@ -161,3 +161,30 @@ func TestLogInUser(t *testing.T) {
 			rr.Body.String(), expected)
 	}
 }
+
+func TestSettleAllUserOutgoings(t *testing.T) {
+	dbh := config.TestDBH()
+
+	user, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
+	_ = user.AddOutgoing(test.RandomOutgoing())
+
+	router := httprouter.New()
+	router.POST("/user/:id/settle", api.SettleAllUserOutgoings(dbh))
+
+	req, _ := http.NewRequest("POST", fmt.Sprintf("/user/%s/settle", strconv.Itoa(*user.ID)), nil)
+	rr := httptest.NewRecorder()
+
+	router.ServeHTTP(rr, req)
+
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+	expectedResponse := `{"message":"All outgoings settled!"}`
+	if rr.Body.String() != expectedResponse {
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			rr.Body.String(), expectedResponse)
+	}
+}

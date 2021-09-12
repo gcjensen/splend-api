@@ -37,11 +37,7 @@ func TestNewUser(t *testing.T) {
 func TestUser_AddGetOutgoings(t *testing.T) {
 	dbh := config.TestDBH()
 
-	user, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
-	randomPartner := test.RandomUser()
-	randomPartner.CoupleID = user.CoupleID
-	partner, _ := splend.NewUser(randomPartner, test.RandomSha256(), dbh)
-	user.Partner = partner
+	user, partner := test.RandomCouple(dbh)
 
 	randomOutgoingOne := test.RandomOutgoing()
 	randomOutgoingTwo := test.RandomOutgoing()
@@ -128,4 +124,38 @@ func TestUser_AddAmexTransaction(t *testing.T) {
 
 	err = user.AddAmexTransaction(amexTX)
 	assert.True(t, errors.Is(err, splend.ErrAlreadyExists))
+}
+
+func TestUser_SettleAllOutgoings(t *testing.T) {
+	dbh := config.TestDBH()
+
+	user, partner := test.RandomCouple(dbh)
+
+	for i := 0; i <= 5; i++ {
+		_ = user.AddOutgoing(test.RandomOutgoing())
+		_ = partner.AddOutgoing(test.RandomOutgoing())
+	}
+
+	unrelatedUser, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
+	_ = unrelatedUser.AddOutgoing(test.RandomOutgoing())
+
+	outgoings, _ := user.GetOutgoings(nil)
+	for _, o := range outgoings {
+		assert.Nil(t, o.Settled)
+	}
+
+	err := user.SettleAllOutgoings()
+	assert.Nil(t, err)
+
+	outgoings, _ = user.GetOutgoings(nil)
+	partnerOutgoings, _ := partner.GetOutgoings(nil)
+	outgoings = append(outgoings, partnerOutgoings...)
+
+	for _, o := range outgoings {
+		assert.NotNil(t, o.Settled)
+	}
+
+	// Check the unrelated outgoing is still unsettled
+	unrelatedOutgoing, _ := unrelatedUser.GetOutgoings(nil)
+	assert.Nil(t, unrelatedOutgoing[0].Settled)
 }

@@ -60,6 +60,7 @@ func (server *Server) Initialise(dbh *sql.DB) {
 	server.Router.POST("/user/:id/add", Auth(AddOutgoing(dbh), dbh))
 	server.Router.POST("/user/:id/amex", Auth(AddFromAmex(dbh), dbh))
 	server.Router.POST("/user/:id/monzo-webhook", AddFromMonzo(dbh))
+	server.Router.POST("/user/:id/settle", Auth(SettleAllUserOutgoings(dbh), dbh))
 	server.Router.POST("/outgoing/settle/:outgoingID/:shouldSettle", Auth(SettleOutgoing(dbh), dbh))
 	server.Router.POST("/outgoing/delete/:outgoingID", Auth(DeleteOutgoing(dbh), dbh))
 	server.Router.POST("/outgoing/update/:outgoingID", Auth(UpdateOutgoing(dbh), dbh))

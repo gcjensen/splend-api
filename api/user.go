@@ -115,3 +115,27 @@ func LogInUser(dbh *sql.DB) httprouter.Handle {
 		respondWithJSON(writer, http.StatusOK, user)
 	}
 }
+
+func SettleAllUserOutgoings(dbh *sql.DB) httprouter.Handle {
+	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		id, err := strconv.Atoi(params.ByName("id"))
+		if err != nil {
+			respondWithError(err, writer)
+			return
+		}
+
+		user, err := splend.NewUserFromDB(id, dbh)
+		if err != nil {
+			respondWithError(err, writer)
+			return
+		}
+
+		err = user.SettleAllOutgoings()
+		if err != nil {
+			respondWithError(err, writer)
+			return
+		}
+
+		respondWithSuccess(writer, http.StatusOK, "All outgoings settled!")
+	}
+}

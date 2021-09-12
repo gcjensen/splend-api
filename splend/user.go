@@ -187,6 +187,18 @@ func (u *User) LinkMonzo(account *MonzoAccount) error {
 	return err
 }
 
+func (u *User) SettleAllOutgoings() error {
+	statement, _ := u.dbh.Prepare(`
+		UPDATE outgoings SET settled = NOW() 
+		WHERE spender_id in (?, ?) AND settled IS NULL AND owed > 0
+	`)
+	defer statement.Close()
+
+	_, err := statement.Exec(u.ID, u.Partner.ID)
+
+	return err
+}
+
 func (u *User) addCouple() (*int, error) {
 	_, err := u.dbh.Exec(`
 		INSERT INTO couples (joining_date) VALUES (NOW())

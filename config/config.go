@@ -55,7 +55,7 @@ func TestDBH() *sql.DB {
 		"%s:%s@(%s)/%s?%s",
 		c.TestDatabase.Username,
 		c.TestDatabase.Password,
-		c.Database.Hostname,
+		c.TestDatabase.Hostname,
 		c.TestDatabase.Name,
 		"parseTime=true",
 	)

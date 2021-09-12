@@ -28,6 +28,16 @@ func RandomUser() *splend.User {
 	}
 }
 
+func RandomCouple(dbh *sql.DB) (*splend.User, *splend.User) {
+	user, _ := splend.NewUser(RandomUser(), RandomSha256(), dbh)
+	randomPartner := RandomUser()
+	randomPartner.CoupleID = user.CoupleID
+	partner, _ := splend.NewUser(randomPartner, RandomSha256(), dbh)
+	user.Partner = partner
+
+	return user, partner
+}
+
 func RandomUserAndOutgoing(dbh *sql.DB) *splend.Outgoing {
 	statement, _ := dbh.Prepare(`
 		INSERT INTO users
