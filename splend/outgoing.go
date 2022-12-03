@@ -14,6 +14,7 @@ type Outgoing struct {
 	Owed        int        `json:"owed,string"`
 	Spender     int        `json:"spender,string"`
 	Category    string     `json:"category"`
+	Tags        []string   `json:"tags"`
 	Settled     *time.Time `json:"settled"`
 	Timestamp   *time.Time `json:"timestamp"`
 
@@ -29,7 +30,7 @@ func NewOutgoing(outgoing *Outgoing, dbh *sql.DB) (*Outgoing, error) {
 }
 
 func NewOutgoingFromDB(id int, dbh *sql.DB) (*Outgoing, error) {
-	o := &Outgoing{ID: &id}
+	o := &Outgoing{ID: &id, Tags: []string{}}
 	o.dbh = dbh
 	err := o.getOutgoing()
 
@@ -37,27 +38,26 @@ func NewOutgoingFromDB(id int, dbh *sql.DB) (*Outgoing, error) {
 }
 
 func (o *Outgoing) Delete() error {
-	statement, err := o.dbh.Prepare(`
-		DELETE FROM amex_transactions WHERE outgoing_id = ?
-	`)
-	if err != nil {
-		return nil
+	table := []string{
+		"amex_transactions",
+		"outgoing_tags",
 	}
 
-	defer statement.Close()
-
-	_, err = statement.Exec(*o.ID)
-
-	if err != nil {
-		return nil
+	for _, table := range table {
+		statement, _ := o.dbh.Prepare(fmt.Sprintf(`DELETE FROM %s WHERE outgoing_id = ?`, table))
+		if _, err := statement.Exec(*o.ID); err != nil {
+			return nil
+		}
+		statement.Close()
 	}
 
-	statement, _ = o.dbh.Prepare(`DELETE FROM outgoings WHERE id = ?`)
-	defer statement.Close()
+	statement, _ := o.dbh.Prepare(`DELETE FROM outgoings WHERE id = ?`)
+	if _, err := statement.Exec(*o.ID); err != nil {
+		return nil
+	}
+	statement.Close()
 
-	_, err = statement.Exec(*o.ID)
-
-	return err
+	return nil
 }
 
 func (o *Outgoing) ToggleSettled(shouldSettle bool) error {
@@ -81,10 +81,7 @@ func (o *Outgoing) ToggleSettled(shouldSettle bool) error {
 func (o *Outgoing) Update() error {
 	var categoryID int
 
-	err := o.dbh.QueryRow(
-		`SELECT id FROM categories WHERE name = ?`, o.Category,
-	).Scan(&categoryID)
-	if err != nil {
+	if err := o.dbh.QueryRow(`SELECT id FROM categories WHERE name = ?`, o.Category).Scan(&categoryID); err != nil {
 		return err
 	}
 
@@ -95,11 +92,33 @@ func (o *Outgoing) Update() error {
 	`)
 	defer statement.Close()
 
-	_, err = statement.Exec(
-		o.Description, o.Amount, o.Owed, categoryID, *o.ID,
-	)
+	if _, err := statement.Exec(o.Description, o.Amount, o.Owed, categoryID, *o.ID); err != nil {
+		return err
+	}
 
-	return err
+	return o.insertOutgoingTags()
+}
+
+func (o *Outgoing) UpdateTags(tags []string) error {
+	tagSet := make(map[string]struct{})
+	for _, tag := range tags {
+		tagSet[tag] = struct{}{}
+	}
+
+	// Loop over the existing tags and delete any that aren't in the "new" list
+	for _, tag := range o.Tags {
+		if _, ok := tagSet[tag]; !ok {
+			statement, _ := o.dbh.Prepare(`DELETE ot FROM outgoing_tags ot JOIN tags t ON ot.tag_id=t.id WHERE t.tag = ?`)
+			if _, err := statement.Exec(tag); err != nil {
+				return err
+			}
+			statement.Close()
+		}
+	}
+
+	// Finally update the tags, inserting any that are new
+	o.Tags = tags
+	return o.insertOutgoingTags()
 }
 
 func (o *Outgoing) getInsertDetails() error {
@@ -136,6 +155,10 @@ func (o *Outgoing) getOutgoing() error {
 		return ErrOutgoingUnknown
 	}
 
+	if err := o.addTags(); err != nil {
+		return err
+	}
+
 	return err
 }
 
@@ -163,9 +186,7 @@ func (o *Outgoing) insertCategory() (*int, error) {
 func (o *Outgoing) insertOutgoing() error {
 	var categoryID *int
 
-	err := o.dbh.QueryRow(
-		`SELECT id FROM categories WHERE name = ?`, o.Category,
-	).Scan(&categoryID)
+	err := o.dbh.QueryRow(`SELECT id FROM categories WHERE name = ?`, o.Category).Scan(&categoryID)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		categoryID, err = o.insertCategory()
@@ -196,5 +217,80 @@ func (o *Outgoing) insertOutgoing() error {
 		return err
 	}
 
-	return o.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&o.ID)
+	err = o.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&o.ID)
+	if err != nil {
+		return err
+	}
+
+	return o.insertOutgoingTags()
+}
+
+func (o *Outgoing) insertOutgoingTags() error {
+
+	for _, tag := range o.Tags {
+		var tagId *int
+		err := o.dbh.QueryRow(`SELECT id FROM tags WHERE tag = ?`, tag).Scan(&tagId)
+
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				tagId, err = o.insertTag(tag)
+			} else {
+				return err
+			}
+		}
+
+		statement, _ := o.dbh.Prepare(`INSERT IGNORE INTO outgoing_tags (tag_id, outgoing_id) VALUES (?, ?)`)
+		defer statement.Close()
+
+		_, err = statement.Exec(&tagId, o.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (o *Outgoing) insertTag(tag string) (*int, error) {
+	statement, _ := o.dbh.Prepare(
+		`INSERT INTO tags (tag) VALUES (?)`,
+	)
+	defer statement.Close()
+
+	_, err := statement.Exec(tag)
+	if err != nil {
+		return nil, err
+	}
+
+	var tagId int
+	err = o.dbh.QueryRow("SELECT LAST_INSERT_ID()").Scan(&tagId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &tagId, nil
+}
+
+func (o *Outgoing) addTags() error {
+	query := `
+		SELECT tag FROM tags t JOIN outgoing_tags ot ON t.id=ot.tag_id
+		WHERE ot.outgoing_id=?
+	`
+	rows, err := o.dbh.Query(query, o.ID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var tag string
+		if err := rows.Scan(&tag); err != nil {
+			return err
+		}
+
+		o.Tags = append(o.Tags, tag)
+	}
+
+	return nil
 }

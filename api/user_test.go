@@ -105,6 +105,7 @@ func TestGetUserOutgoingsEndPoint(t *testing.T) {
 		`"owed":"%d",`+
 		`"spender":"%d",`+
 		`"category":"`+outgoing.Category+`",`+
+		`"tags":["`+outgoing.Tags[0]+`","`+outgoing.Tags[1]+`"],`+
 		`"settled":null,`+
 		`"timestamp":"`+timestamp+`"`+
 		`}]`, *outgoing.ID, outgoing.Amount, outgoing.Owed, *user.ID)

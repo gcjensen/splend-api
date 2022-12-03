@@ -143,6 +143,10 @@ func (u *User) GetOutgoings(where map[string]interface{}) ([]Outgoing, error) {
 			return nil, err
 		}
 
+		if err := u.addTagsToOutgoings(&o); err != nil {
+			return nil, err
+		}
+
 		outgoings = append(outgoings, o)
 	}
 
@@ -330,4 +334,29 @@ func (u *User) isAmexTransactionNew(tx amex.Transaction) error {
 	err := u.dbh.QueryRow(query, tx.ID, u.ID).Scan()
 
 	return err
+}
+
+func (u *User) addTagsToOutgoings(outgoing *Outgoing) error {
+	query := `
+		 SELECT tag FROM tags t JOIN outgoing_tags ot ON t.id=ot.tag_id 
+		 WHERE ot.outgoing_id=?
+	`
+	rows, err := u.dbh.Query(query, outgoing.ID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	tags := []string{}
+	for rows.Next() {
+		var tag string
+		if err := rows.Scan(&tag); err != nil {
+			return err
+		}
+
+		tags = append(tags, tag)
+	}
+	outgoing.Tags = tags
+
+	return nil
 }

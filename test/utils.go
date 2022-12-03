@@ -65,5 +65,6 @@ func RandomOutgoing() *splend.Outgoing {
 		Amount:      amount,
 		Owed:        amount / 2,
 		Category:    fake.Product(),
+		Tags:        []string{fake.Product(), fake.Product()},
 	}
 }

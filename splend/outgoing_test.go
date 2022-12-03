@@ -85,3 +85,17 @@ func TestOutgoing_Update(t *testing.T) {
 
 	assert.Equal(t, updatedOutgoing.Description, "Groceries")
 }
+
+func TestOutgoing_UpdateTags(t *testing.T) {
+	dbh := config.TestDBH()
+	randomOutgoing := test.RandomUserAndOutgoing(dbh)
+	outgoing, _ := splend.NewOutgoing(randomOutgoing, dbh)
+
+	newTags := []string{"non-discretionary"}
+	err := outgoing.UpdateTags(newTags)
+	assert.Nil(t, err)
+
+	updatedOutgoing, _ := splend.NewOutgoingFromDB(*outgoing.ID, dbh)
+
+	assert.Equal(t, newTags, updatedOutgoing.Tags)
+}

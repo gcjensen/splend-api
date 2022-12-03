@@ -120,7 +120,12 @@ func UpdateOutgoing(dbh *sql.DB) httprouter.Handle {
 				outgoingToUpdate.Owed = updatedOutgoing.Owed
 				outgoingToUpdate.Category = updatedOutgoing.Category
 
-				err = outgoingToUpdate.Update()
+				if err := outgoingToUpdate.Update(); err != nil {
+					respondWithError(err, writer)
+					return
+				}
+
+				err = outgoingToUpdate.UpdateTags(updatedOutgoing.Tags)
 			}
 		}
 

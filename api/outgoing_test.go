@@ -28,7 +28,8 @@ func TestAddOutgoing(t *testing.T) {
 		`"amount":"200",`+
 		`"owed":"10",`+
 		`"spender":"%d",`+
-		`"category":"General"`+
+		`"category":"General",`+
+		`"tags":["discretionary"]`+
 		`}`, *user.ID)
 
 	body := []byte(bodyString)
@@ -148,7 +149,8 @@ func TestUpdateOutgoing(t *testing.T) {
 		`"amount":"60",`+
 		`"owed":"30",`+
 		`"spender":"%d",`+
-		`"category":"General"`+
+		`"category":"General",`+
+		`"tags":["discretionary"]`+
 		`}`, *user.ID)
 
 	body := []byte(bodyString)

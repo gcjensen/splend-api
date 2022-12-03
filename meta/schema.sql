@@ -1,8 +1,8 @@
--- MariaDB dump 10.17  Distrib 10.4.11-MariaDB, for osx10.14 (x86_64)
+-- MariaDB dump 10.17  Distrib 10.4.13-MariaDB, for osx10.15 (x86_64)
 --
 -- Host: localhost    Database: splend
 -- ------------------------------------------------------
--- Server version	10.4.11-MariaDB
+-- Server version	10.4.13-MariaDB
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -78,6 +78,24 @@ CREATE TABLE `monzo_accounts` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `outgoing_tags`
+--
+
+DROP TABLE IF EXISTS `outgoing_tags`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `outgoing_tags` (
+  `outgoing_id` int(11) NOT NULL,
+  `tag_id` int(11) NOT NULL,
+  PRIMARY KEY (`outgoing_id`,`tag_id`),
+  KEY `outgoing_id` (`outgoing_id`),
+  KEY `tag_id` (`tag_id`),
+  CONSTRAINT `outgoing_tags_ibfk_1` FOREIGN KEY (`outgoing_id`) REFERENCES `outgoings` (`id`),
+  CONSTRAINT `outgoing_tags_ibfk_2` FOREIGN KEY (`tag_id`) REFERENCES `tags` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `outgoings`
 --
 
@@ -98,6 +116,20 @@ CREATE TABLE `outgoings` (
   KEY `category_id` (`category_id`),
   CONSTRAINT `outgoings_ibfk_1` FOREIGN KEY (`spender_id`) REFERENCES `users` (`id`),
   CONSTRAINT `outgoings_ibfk_2` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tags`
+--
+
+DROP TABLE IF EXISTS `tags`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `tags` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tag` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -132,4 +164,4 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-02-23 14:48:19
+-- Dump completed on 2022-12-03 14:10:53
