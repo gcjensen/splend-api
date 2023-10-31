@@ -5,6 +5,7 @@ services:
     build: "."
     networks:
       - splend-network
+    restart: on-failure
 
   nginx-proxy:
     build:

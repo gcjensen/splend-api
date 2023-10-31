@@ -28,6 +28,14 @@ type Config struct {
 
 	Host string `yaml:"host"`
 	Port int    `yaml:"port"`
+
+	Plaid Plaid `yaml:"plaid"`
+}
+
+type Plaid struct {
+	ClientID    string `yaml:"client_id"`
+	Secret      string `yaml:"secret"`
+	AccessToken string `yaml:"access_token"`
 }
 
 func SplendDBH() *sql.DB {
