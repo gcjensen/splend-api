@@ -104,6 +104,6 @@ func TestAddMonzoTransaction(t *testing.T) {
 
 	outgoings, _ := user.GetOutgoings(nil)
 
-	assert.Equal(t, outgoings[0].Description, "Waitrose & Partners")
-	assert.Equal(t, outgoings[0].Amount, 1254)
+	assert.Equal(t, "Waitrose & Partners", outgoings[0].Description)
+	assert.Equal(t, 1254, outgoings[0].Amount)
 }

@@ -7,6 +7,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-const logDir = "/var/log/splend-api/"
+const logDir = "/tmp/log/splend-api/"
 
 func AddFromAmex(dbh *sql.DB) httprouter.Handle {
 	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
@@ -42,7 +43,9 @@ func AddFromAmex(dbh *sql.DB) httprouter.Handle {
 		}
 
 		amexJSON, _ := json.Marshal(transaction)
-		logTransaction("amex", amexJSON)
+		if err := logTransaction("amex", amexJSON); err != nil {
+			log.Printf("Error logging AMEX transaction: %s", err.Error())
+		}
 
 		err = user.AddAmexTransaction(transaction)
 		if err != nil {
@@ -87,17 +90,18 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 		}
 
 		monzoJSON, _ := json.Marshal(transaction)
-		logTransaction("monzo", monzoJSON)
+		if err := logTransaction("monzo", monzoJSON); err != nil {
+			log.Printf("Error logging Monzo transaction: %s", err.Error())
+		}
 
 		if transaction["type"] == "transaction.created" {
 			data := transaction["data"].(map[string]interface{})
 
-			if verifyTransaction(user, data) {
-				merchant := data["merchant"].(map[string]interface{})
+			if valid, description := verifyTransaction(user, data); valid {
 				outgoing := &splend.Outgoing{
 					Amount:      int(math.Abs(data["amount"].(float64))),
 					Category:    "Other",
-					Description: merchant["name"].(string),
+					Description: description,
 					Spender:     *user.ID,
 				}
 
@@ -112,37 +116,45 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 				log.Printf("Transaction not valid. Ignoring")
 			}
 		} else {
-			log.Printf("Unexpected webhook type: %s", transaction["type"])
-			respondWithError(ErrUnregisteredWebhookType, writer)
-			return
+			log.Printf("%s: %s", ErrUnregisteredWebhookType.Error(), transaction["type"])
 		}
 
 		respondWithSuccess(writer, http.StatusOK, "Request successful")
 	}
 }
 
-func logTransaction(t string, txJSON []byte) {
+func logTransaction(t string, txJSON []byte) error {
+	if err := os.MkdirAll(logDir, 0700); err != nil {
+		return err
+	}
+
 	filename := t + "-" + time.Now().Format("2006-01-02 15:04:05") + ".json"
-	_ = ioutil.WriteFile(logDir+filename, txJSON, 0o600)
+	return ioutil.WriteFile(logDir+filename, txJSON, 0o600)
 }
 
 // Checks the transaction is a debit i.e. negative and that the Monzo account is
 // linked to the provided user.
-func verifyTransaction(user *splend.User, data map[string]interface{}) bool {
+func verifyTransaction(user *splend.User, data map[string]interface{}) (bool, string) {
+	var description string
+
 	if merchant, ok := data["merchant"].(map[string]interface{}); ok {
-		accLinked := false
-		for _, acc := range user.MonzoAccounts {
-			if data["account_id"] == *acc.ID {
-				accLinked = true
-				break
-			}
-		}
-
-		_, hasMerchant := merchant["name"]
-		isDebit := data["amount"].(float64) < 0
-
-		return accLinked && hasMerchant && isDebit
+		description, _ = merchant["name"].(string)
+	} else if counterparty, ok := data["counterparty"].(map[string]interface{}); ok {
+		description, _ = counterparty["name"].(string)
+	} else {
+		// No merchant or counterparty, so we're not interested
+		return false, ""
 	}
 
-	return false
+	accLinked := false
+	for _, acc := range user.MonzoAccounts {
+		if data["account_id"] == *acc.ID {
+			accLinked = true
+			break
+		}
+	}
+
+	isDebit := data["amount"].(float64) < 0
+
+	return accLinked && isDebit, description
 }
