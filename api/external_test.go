@@ -64,8 +64,13 @@ func TestAddMonzoTransaction(t *testing.T) {
 	user, _ := splend.NewUser(test.RandomUser(), test.RandomSha256(), dbh)
 
 	account := "acc_XXXXXXXXXXXXXXXXXXXXXX"
-
 	err := user.LinkMonzo(&splend.MonzoAccount{ID: &account})
+	if err != nil {
+		t.Error(err)
+	}
+
+	jointAccount := "acc_YYYYYYYYYYYYYYYYYYYYYY"
+	err = user.LinkMonzo(&splend.MonzoAccount{ID: &jointAccount})
 	if err != nil {
 		t.Error(err)
 	}

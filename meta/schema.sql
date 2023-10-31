@@ -71,7 +71,7 @@ DROP TABLE IF EXISTS `monzo_accounts`;
 CREATE TABLE `monzo_accounts` (
   `user_id` int(11) NOT NULL,
   `account_id` varchar(255) NOT NULL,
-  PRIMARY KEY (`user_id`),
+  PRIMARY KEY (`user_id`,`account_id`),
   KEY `monzo` (`account_id`(191)),
   CONSTRAINT `monzo_accounts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -164,4 +164,4 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-12-03 14:10:53
+-- Dump completed on 2023-10-31 18:55:32

@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -35,6 +36,8 @@ func AddOutgoing(dbh *sql.DB) httprouter.Handle {
 			respondWithError(err, writer)
 			return
 		}
+
+		log.Printf("Outgoing added!")
 
 		respondWithSuccess(writer, http.StatusCreated, "Outgoing added!")
 	}

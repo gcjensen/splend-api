@@ -64,12 +64,14 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 
 		id, err := strconv.Atoi(params.ByName("id"))
 		if err != nil {
+			log.Printf("Error parsing user ID: %s", err.Error())
 			respondWithError(err, writer)
 			return
 		}
 
 		user, err := splend.NewUserFromDB(id, dbh)
 		if err != nil {
+			log.Printf("Error finding user from ID: %s", err.Error())
 			respondWithError(err, writer)
 			return
 		}
@@ -78,6 +80,11 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 
 		var transaction map[string]interface{}
 		err = decoder.Decode(&transaction)
+		if err != nil {
+			log.Printf("Error decoding transaction: %s", err.Error())
+			respondWithError(err, writer)
+			return
+		}
 
 		monzoJSON, _ := json.Marshal(transaction)
 		logTransaction("monzo", monzoJSON)
@@ -93,17 +100,20 @@ func AddFromMonzo(dbh *sql.DB) httprouter.Handle {
 					Description: merchant["name"].(string),
 					Spender:     *user.ID,
 				}
-				err = user.AddOutgoing(outgoing)
+
+				if err = user.AddOutgoing(outgoing); err != nil {
+					log.Printf("Error adding outgoing: %s", err.Error())
+					respondWithError(err, writer)
+					return
+				}
+
+				log.Printf("Outgoing added from Monzo")
 			} else {
 				log.Printf("Transaction not valid. Ignoring")
 			}
 		} else {
+			log.Printf("Unexpected webhook type: %s", transaction["type"])
 			respondWithError(ErrUnregisteredWebhookType, writer)
-			return
-		}
-
-		if err != nil {
-			respondWithError(err, writer)
 			return
 		}
 
@@ -120,10 +130,18 @@ func logTransaction(t string, txJSON []byte) {
 // linked to the provided user.
 func verifyTransaction(user *splend.User, data map[string]interface{}) bool {
 	if merchant, ok := data["merchant"].(map[string]interface{}); ok {
-		if _, ok := merchant["name"]; ok {
-			return data["account_id"] == *user.MonzoAccount.ID &&
-				data["amount"].(float64) < 0
+		accLinked := false
+		for _, acc := range user.MonzoAccounts {
+			if data["account_id"] == *acc.ID {
+				accLinked = true
+				break
+			}
 		}
+
+		_, hasMerchant := merchant["name"]
+		isDebit := data["amount"].(float64) < 0
+
+		return accLinked && hasMerchant && isDebit
 	}
 
 	return false

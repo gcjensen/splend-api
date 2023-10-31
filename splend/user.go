@@ -13,16 +13,16 @@ type MonzoAccount struct {
 }
 
 type User struct {
-	dbh          *sql.DB
-	ID           *int         `json:"id"`
-	FirstName    string       `json:"firstName"`
-	LastName     string       `json:"lastName"`
-	Email        string       `json:"email"`
-	Colour       *string      `json:"colour"`
-	Partner      *User        `json:"partner"`
-	CoupleID     *int         `json:"-"`
-	IconLink     *string      `json:"iconLink"`
-	MonzoAccount MonzoAccount `json:"-"`
+	dbh           *sql.DB
+	ID            *int           `json:"id"`
+	FirstName     string         `json:"firstName"`
+	LastName      string         `json:"lastName"`
+	Email         string         `json:"email"`
+	Colour        *string        `json:"colour"`
+	Partner       *User          `json:"partner"`
+	CoupleID      *int           `json:"-"`
+	IconLink      *string        `json:"iconLink"`
+	MonzoAccounts []MonzoAccount `json:"-"`
 }
 
 type Summary struct {
@@ -45,7 +45,7 @@ func NewUser(user *User, sha256 string, dbh *sql.DB) (*User, error) {
 }
 
 func NewUserFromDB(id int, dbh *sql.DB) (*User, error) {
-	self := &User{dbh: dbh, MonzoAccount: MonzoAccount{}}
+	self := &User{dbh: dbh}
 
 	err := dbh.QueryRow(
 		`SELECT email FROM users WHERE id = ?`, id,
@@ -175,11 +175,13 @@ func (u *User) GetSummary() (*Summary, error) {
 }
 
 func (u *User) LinkMonzo(account *MonzoAccount) error {
-	if u.MonzoAccount.ID != nil {
-		return ErrMonzoAccountAlreadyLinked
+	for _, acc := range u.MonzoAccounts {
+		if acc.ID == account.ID {
+			return ErrMonzoAccountAlreadyLinked
+		}
 	}
 
-	u.MonzoAccount.ID = account.ID
+	u.MonzoAccounts = append(u.MonzoAccounts, *account)
 
 	statement, _ := u.dbh.Prepare(
 		`INSERT INTO monzo_accounts (user_id, account_id) VALUES (?, ?)`,
@@ -259,7 +261,30 @@ func (u *User) getUser() error {
 	}
 
 	statement := "SELECT account_id FROM monzo_accounts WHERE user_id= ?"
-	_ = u.dbh.QueryRow(statement, *u.ID).Scan(&u.MonzoAccount.ID)
+
+	rows, err := u.dbh.Query(statement, *u.ID)
+	if err != nil {
+		return err
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	var monzoAccs []MonzoAccount
+
+	for rows.Next() {
+		var acc MonzoAccount
+		if err := rows.Scan(&acc.ID); err != nil {
+			return err
+		}
+
+		monzoAccs = append(monzoAccs, acc)
+	}
+
+	u.MonzoAccounts = monzoAccs
 
 	return nil
 }
