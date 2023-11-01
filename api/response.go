@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/gcjensen/splend-api/splend"
@@ -37,8 +38,7 @@ func respondWithJSON(writer http.ResponseWriter, code int, resp interface{}) {
 
 	_, err := writer.Write(response)
 	if err != nil {
-		respondWithError(err, writer)
-		return
+		log.Printf("Failed to write response: %s", err.Error())
 	}
 }
 
