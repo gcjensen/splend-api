@@ -2,7 +2,7 @@
 The RESTful API behind the Splend (split & lend) app, a tool for managing
 shared expenditure with your other half.
 
-[![CircleCI](https://circleci.com/gh/gcjensen/splend-api/tree/master.svg?style=svg&circle-token=cd1f6a0dfb674a6e51208a65872cf8bb96bef46f)](https://circleci.com/gh/gcjensen/splend-api/tree/master)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/gcjensen/splend-api/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/gcjensen/splend-api/tree/master)
 
 ### Build Instructions
 
