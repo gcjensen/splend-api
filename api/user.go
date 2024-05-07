@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -10,7 +11,7 @@ import (
 )
 
 // How many months worth of outgoings to fetch.
-const outgoingsMonths = 6
+const outgoingsMonths = 3
 
 func GetUserMonthBreakdown(dbh *sql.DB) httprouter.Handle {
 	return func(writer http.ResponseWriter, req *http.Request, params httprouter.Params) {
@@ -48,6 +49,8 @@ func GetUserOutgoings(dbh *sql.DB) httprouter.Handle {
 		}
 
 		user, err := splend.NewUserFromDB(id, dbh)
+
+		log.Printf("Fetching user outgoings for %s", user.FirstName)
 
 		var outgoings []splend.Outgoing
 

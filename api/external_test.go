@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/gcjensen/splend-api/api"
 	"github.com/gcjensen/splend-api/config"
@@ -26,7 +27,7 @@ func TestAddAmexTransaction(t *testing.T) {
 
 	bodyString := `{
 		"amount":"1700",
-		"date":"01-01-2020",
+		"date":"2020-01-01T19:30:31Z",
 		"description":"Beers",
 		"id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 	}`
@@ -54,8 +55,9 @@ func TestAddAmexTransaction(t *testing.T) {
 
 	outgoings, _ := user.GetOutgoings(nil)
 
-	assert.Equal(t, outgoings[0].Description, "Beers")
-	assert.Equal(t, outgoings[0].Amount, 1700)
+	assert.Equal(t, "Beers", outgoings[0].Description)
+	assert.Equal(t, 1700, outgoings[0].Amount)
+	assert.Equal(t, time.Date(2020, 01, 01, 19, 30, 31, 0, time.UTC), *outgoings[0].Timestamp)
 }
 
 func TestAddMonzoTransaction(t *testing.T) {

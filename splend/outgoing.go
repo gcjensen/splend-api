@@ -203,16 +203,21 @@ func (o *Outgoing) insertOutgoing() error {
 		settled = "NULL"
 	}
 
+	if o.Timestamp == nil {
+		now := time.Now()
+		o.Timestamp = &now
+	}
+
 	// #nosec - 'settled' is set above, so there's no risk of sql injection
 	statement, _ := o.dbh.Prepare(fmt.Sprintf(`
 			INSERT INTO outgoings
 			(description, amount, owed, spender_id, category_id, settled,
 			timestamp)
-			VALUES (?, ?, ?, ?, ?, %s, NOW())
+			VALUES (?, ?, ?, ?, ?, %s, ?)
 		`, settled))
 	defer statement.Close()
 
-	_, err = statement.Exec(o.Description, o.Amount, o.Owed, o.Spender, &categoryID)
+	_, err = statement.Exec(o.Description, o.Amount, o.Owed, o.Spender, &categoryID, o.Timestamp)
 	if err != nil {
 		return err
 	}

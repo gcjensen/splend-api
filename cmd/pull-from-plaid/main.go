@@ -42,6 +42,7 @@ type PlaidTransactions struct {
 	Name                 string  `json:"name"`
 	TransactionID        string  `json:"transaction_id"`
 	PendingTransactionID string  `json:"pending_transaction_id"`
+	Date                 string  `json:"datetime""`
 }
 
 func main() {
@@ -100,6 +101,7 @@ func main() {
 			Amount:      int(tx.Amount * 100),
 			Description: tx.Name,
 			ID:          txID[:32],
+			Date:        tx.Date,
 		})
 	}
 

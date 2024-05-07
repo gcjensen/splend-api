@@ -17,7 +17,6 @@ func TestNewOutgoing(t *testing.T) {
 	outgoing, _ := splend.NewOutgoing(randomOutgoing, dbh)
 
 	outgoingFromDB, err := splend.NewOutgoingFromDB(*outgoing.ID, dbh)
-	outgoing.Timestamp = outgoingFromDB.Timestamp
 
 	assert.Nil(t, err)
 	assert.Equal(t, outgoing, outgoingFromDB)

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"math/rand"
+	"time"
 
 	"github.com/gcjensen/splend-api/splend"
 	"github.com/icrowley/fake"
@@ -59,6 +60,7 @@ func RandomUserAndOutgoing(dbh *sql.DB) *splend.Outgoing {
 
 func RandomOutgoing() *splend.Outgoing {
 	amount := rand.Intn(100)
+	now := time.Date(2024, 05, 07, 21, 17, 14, 0, time.UTC)
 
 	return &splend.Outgoing{
 		Description: fake.ProductName(),
@@ -66,5 +68,6 @@ func RandomOutgoing() *splend.Outgoing {
 		Owed:        amount / 2,
 		Category:    fake.Product(),
 		Tags:        []string{fake.Product(), fake.Product()},
+		Timestamp:   &now,
 	}
 }

@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
+	"time"
 
 	"github.com/gcjensen/amex"
 )
@@ -65,11 +67,24 @@ func (u *User) AddAmexTransaction(tx amex.Transaction) error {
 		return ErrAlreadyExists
 	}
 
+	timestamp := time.Now()
+
+	if tx.Date != "" {
+		timestamp, err = time.Parse("2006-01-02T15:04:05Z", tx.Date)
+		if err != nil {
+			timestamp, err = time.Parse("2006-01-02", tx.Date)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	err = u.AddOutgoing(&Outgoing{
 		Amount:      tx.Amount,
 		Category:    "Other",
 		Description: tx.Description,
 		Spender:     *u.ID,
+		Timestamp:   &timestamp,
 	})
 	if err != nil {
 		return err
@@ -105,12 +120,7 @@ func (u *User) GetOutgoings(where map[string]interface{}) ([]Outgoing, error) {
 		partnerID = *u.Partner.ID
 	}
 
-	query := `
-		SELECT o.id, description, amount, owed, spender_id, c.name, settled,
-		timestamp
-		FROM outgoings o
-		JOIN categories c ON o.category_id=c.id
-		WHERE (spender_id = ? OR (spender_id = ? AND owed > 0))
+	query := `SELECT o.id, description, amount, owed, spender_id, c.name, settled, timestamp FROM outgoings o JOIN categories c ON o.category_id=c.id WHERE (spender_id = ? OR (spender_id = ? AND owed > 0))
 	`
 
 	params := []interface{}{u.ID, partnerID}
@@ -123,6 +133,8 @@ func (u *User) GetOutgoings(where map[string]interface{}) ([]Outgoing, error) {
 
 	query += `ORDER BY o.timestamp DESC`
 
+	log.Printf("Running query: %s", query)
+
 	rows, err := u.dbh.Query(query, params...)
 	if err != nil {
 		return nil, err
@@ -133,6 +145,8 @@ func (u *User) GetOutgoings(where map[string]interface{}) ([]Outgoing, error) {
 	}
 
 	defer rows.Close()
+
+	log.Println("Query run")
 
 	var outgoings []Outgoing
 
@@ -149,6 +163,8 @@ func (u *User) GetOutgoings(where map[string]interface{}) ([]Outgoing, error) {
 
 		outgoings = append(outgoings, o)
 	}
+
+	log.Println("Rows scanned")
 
 	return outgoings, err
 }
